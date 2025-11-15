@@ -1,15 +1,17 @@
 "use client";
 
 import * as React from "react";
-import { X, Upload, FileText, Loader2, Trash2 } from "lucide-react";
+import { X, Upload, FileText, Loader2, Trash2, Check } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useDispatch } from "react-redux";
-import { AppDispatch } from "@/store";
+import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch, RootState } from "@/store";
 import { createAppSession } from "@/store/thunk/sessionthunk";
 import { fetchDocuments } from "@/store/thunk/documentsthunk";
+import type { Document } from "@/store/thunk/documentsthunk";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface CreateSessionDialogProps {
   open: boolean;
@@ -26,16 +28,28 @@ export function CreateSessionDialog({ open, onOpenChange }: CreateSessionDialogP
   const [sessionName, setSessionName] = React.useState("");
   const [description, setDescription] = React.useState("");
   const [selectedFiles, setSelectedFiles] = React.useState<SelectedFile[]>([]);
+  const [selectedExistingDocs, setSelectedExistingDocs] = React.useState<Set<string>>(new Set());
   const [isCreating, setIsCreating] = React.useState(false);
   const [dragActive, setDragActive] = React.useState(false);
 
   const dispatch = useDispatch<AppDispatch>();
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
+  // Get existing documents from Redux store
+  const { documents } = useSelector((state: RootState) => state.documents);
+
+  // Fetch documents when dialog opens
+  React.useEffect(() => {
+    if (open) {
+      dispatch(fetchDocuments());
+    }
+  }, [open, dispatch]);
+
   const resetForm = () => {
     setSessionName("");
     setDescription("");
     setSelectedFiles([]);
+    setSelectedExistingDocs(new Set());
   };
 
   const handleClose = () => {
@@ -121,6 +135,18 @@ export function CreateSessionDialog({ open, onOpenChange }: CreateSessionDialogP
     );
   };
 
+  const toggleExistingDoc = (docId: string) => {
+    setSelectedExistingDocs(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(docId)) {
+        newSet.delete(docId);
+      } else {
+        newSet.add(docId);
+      }
+      return newSet;
+    });
+  };
+
   const formatFileSize = (bytes: number): string => {
     const units = ["B", "KB", "MB", "GB"];
     let size = bytes;
@@ -142,8 +168,9 @@ export function CreateSessionDialog({ open, onOpenChange }: CreateSessionDialogP
       return;
     }
 
-    if (selectedFiles.length === 0) {
-      toast.error("Please select at least one document");
+    const totalDocuments = selectedFiles.length + selectedExistingDocs.size;
+    if (totalDocuments === 0) {
+      toast.error("Please select at least one document (new upload or existing)");
       return;
     }
 
@@ -160,32 +187,58 @@ export function CreateSessionDialog({ open, onOpenChange }: CreateSessionDialogP
         const newSession = resultAction.payload;
         const sessionId = newSession.id;
 
-        // Upload all documents
-        const uploadPromises = selectedFiles.map(async (selectedFile) => {
-          const formData = new FormData();
-          formData.append("file", selectedFile.file);
-          formData.append("name", selectedFile.name);
-          formData.append("sessionId", sessionId);
+        const promises: Promise<any>[] = [];
 
-          const response = await fetch("/api/document/upload", {
-            method: "POST",
-            body: formData,
+        // Upload new documents
+        if (selectedFiles.length > 0) {
+          const uploadPromises = selectedFiles.map(async (selectedFile) => {
+            const formData = new FormData();
+            formData.append("file", selectedFile.file);
+            formData.append("name", selectedFile.name);
+            formData.append("sessionId", sessionId);
+
+            const response = await fetch("/api/document/upload", {
+              method: "POST",
+              body: formData,
+            });
+
+            if (!response.ok) {
+              const errorData = await response.json();
+              throw new Error(errorData?.message || `Failed to upload ${selectedFile.file.name}`);
+            }
+
+            return response.json();
           });
+          promises.push(...uploadPromises);
+        }
 
-          if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData?.message || `Failed to upload ${selectedFile.file.name}`);
-          }
+        // Update existing documents to associate with this session
+        if (selectedExistingDocs.size > 0) {
+          const updatePromises = Array.from(selectedExistingDocs).map(async (docId) => {
+            const response = await fetch(`/api/document/update/${docId}`, {
+              method: "PATCH",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ sessionId }),
+            });
 
-          return response.json();
-        });
+            if (!response.ok) {
+              const errorData = await response.json();
+              throw new Error(errorData?.message || `Failed to update document ${docId}`);
+            }
 
-        await Promise.all(uploadPromises);
+            return response.json();
+          });
+          promises.push(...updatePromises);
+        }
+
+        await Promise.all(promises);
 
         // Refresh documents list
         dispatch(fetchDocuments());
 
-        toast.success(`Session "${sessionName}" created successfully with ${selectedFiles.length} document(s)`);
+        toast.success(`Session "${sessionName}" created successfully with ${totalDocuments} document(s)`);
         resetForm();
         onOpenChange(false);
       } else {
@@ -259,9 +312,45 @@ export function CreateSessionDialog({ open, onOpenChange }: CreateSessionDialogP
               />
             </div>
 
+            {/* Existing Documents Selection */}
+            {documents.length > 0 && (
+              <div className="space-y-2">
+                <Label>Select from Existing Documents</Label>
+                <div className="border rounded-lg max-h-48 overflow-y-auto">
+                  {documents.map((doc) => (
+                    <div
+                      key={doc.id}
+                      className={`
+                        flex items-center gap-3 p-3 hover:bg-muted/50 cursor-pointer border-b last:border-b-0
+                        ${selectedExistingDocs.has(doc.id) ? "bg-primary/5" : ""}
+                      `}
+                      onClick={() => !isCreating && toggleExistingDoc(doc.id)}
+                    >
+                      <Checkbox
+                        checked={selectedExistingDocs.has(doc.id)}
+                        onCheckedChange={() => toggleExistingDoc(doc.id)}
+                        disabled={isCreating}
+                      />
+                      <FileText className="h-4 w-4 text-primary flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{doc.name}</p>
+                        <p className="text-xs text-muted-foreground truncate">{doc.fileName}</p>
+                      </div>
+                      {selectedExistingDocs.has(doc.id) && (
+                        <Check className="h-4 w-4 text-primary flex-shrink-0" />
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {selectedExistingDocs.size} document(s) selected
+                </p>
+              </div>
+            )}
+
             {/* File Upload Area */}
             <div className="space-y-2">
-              <Label>Documents * (at least one required)</Label>
+              <Label>Upload New Documents</Label>
               <div
                 className={`
                   border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors
@@ -294,10 +383,10 @@ export function CreateSessionDialog({ open, onOpenChange }: CreateSessionDialogP
               </div>
             </div>
 
-            {/* Selected Files List */}
+            {/* Selected New Files List */}
             {selectedFiles.length > 0 && (
               <div className="space-y-2">
-                <Label>Selected Documents ({selectedFiles.length})</Label>
+                <Label>New Documents to Upload ({selectedFiles.length})</Label>
                 <div className="border rounded-lg divide-y max-h-64 overflow-y-auto">
                   {selectedFiles.map((selectedFile) => (
                     <div key={selectedFile.id} className="p-3 flex items-start gap-3">
@@ -345,7 +434,7 @@ export function CreateSessionDialog({ open, onOpenChange }: CreateSessionDialogP
             </Button>
             <Button
               type="submit"
-              disabled={!sessionName.trim() || selectedFiles.length === 0 || isCreating}
+              disabled={!sessionName.trim() || (selectedFiles.length === 0 && selectedExistingDocs.size === 0) || isCreating}
             >
               {isCreating ? (
                 <>
