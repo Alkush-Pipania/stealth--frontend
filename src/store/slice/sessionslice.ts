@@ -58,7 +58,7 @@ const AppSessionslice = createSlice({
             })
             .addCase(fetchAppSessions.fulfilled, (state, action) => {
                 state.loading = false;
-                state.AppSessions = action.payload;
+                state.AppSessions = Array.isArray(action.payload) ? action.payload : [];
                 state.error = null;
             })
             .addCase(fetchAppSessions.rejected, (state, action) => {
@@ -92,7 +92,7 @@ const AppSessionslice = createSlice({
             })
             .addCase(refreshAppSessions.fulfilled, (state, action) => {
                 state.loading = false;
-                state.AppSessions = action.payload;
+                state.AppSessions = Array.isArray(action.payload) ? action.payload : [];
                 state.error = null;
             })
             .addCase(refreshAppSessions.rejected, (state, action) => {

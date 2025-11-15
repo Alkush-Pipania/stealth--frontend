@@ -41,11 +41,13 @@ export const fetchDocuments = createAsyncThunk<
         try {
             const response = await apiGet<GetDocumentsResponse>(API_ENDPOINTS.GET_DOCUMENTS);
 
-            if (!response.success) {
+            if (!response.success || !response.data) {
                 return rejectWithValue(response.error || 'Failed to fetch documents');
             }
 
-            return response.data || [];
+            // apiGet wraps the response, so response.data contains the API response
+            // We need to access response.data.data to get the actual documents array
+            return response.data.data || [];
         } catch (error) {
             const message = error instanceof Error ? error.message : 'Unknown error occurred';
             return rejectWithValue(message);
