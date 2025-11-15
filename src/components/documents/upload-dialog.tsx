@@ -248,6 +248,15 @@ export function UploadDialog({ open, onOpenChange, sessionId }: UploadDialogProp
             />
           </div>
 
+          {/* Session Warning */}
+          {!sessionId && (
+            <div className="rounded-md bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-900 p-3">
+              <p className="text-sm text-yellow-800 dark:text-yellow-200">
+                No active session found. Please create a session first or wait for the default session to be created.
+              </p>
+            </div>
+          )}
+
           {/* Footer */}
           <div className="flex justify-end space-x-2 pt-4">
             <Button
