@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
   output   = "../src/generated/prisma"
@@ -12,151 +9,106 @@ datasource db {
 }
 
 model User {
-  id            String    @id
-  name          String
-  email         String
-  emailVerified Boolean
+  id            String       @id
+  name          String?
+  email         String       @unique
+  emailVerified Boolean      @default(false)
   image         String?
-  createdAt     DateTime
+  createdAt     DateTime     @default(now())
   updatedAt     DateTime
-  sessions      Session[]
+  AppSession    AppSession[]
+  Document      Document[]
   accounts      Account[]
-  
-  // Application relations
-  documents                Document[]
-  meetingTemplates         MeetingTemplate[]
-  appSessions              AppSession[]
-  microphoneDeepgramKey    Json?
-  capturescreenDeepgramKey Json?
-  blocked                  Boolean           @default(false)
+  sessions      Session[]
 
-  @@unique([email])
   @@map("user")
 }
 
 model Session {
   id        String   @id
+  userId    String
   expiresAt DateTime
-  token     String
-  createdAt DateTime
-  updatedAt DateTime
+  token     String   @unique
   ipAddress String?
   userAgent String?
-  userId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([token])
+  @@index([userId])
   @@map("session")
 }
 
 model Account {
   id                    String    @id
+  userId                String
   accountId             String
   providerId            String
-  userId                String
-  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   accessToken           String?
   refreshToken          String?
   idToken               String?
+  expiresAt             DateTime?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime
   accessTokenExpiresAt  DateTime?
   refreshTokenExpiresAt DateTime?
   scope                 String?
-  password              String?
-  createdAt             DateTime
-  updatedAt             DateTime
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@unique([providerId, accountId])
+  @@index([userId])
   @@map("account")
 }
 
 model Verification {
-  id         String    @id
+  id         String   @id
   identifier String
   value      String
   expiresAt  DateTime
-  createdAt  DateTime?
-  updatedAt  DateTime?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime
 
+  @@unique([identifier, value])
   @@map("verification")
 }
 
-// ========================================
-// APPLICATION MODELS (OPTIMIZED)
-// ========================================
-
-// Application Session model (renamed to avoid conflict with auth Session)
 model AppSession {
-  id           String           @id @default(uuid())
-  userId       String
-  user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  name         String           @db.VarChar(200)
-  description  String?          @db.Text
-  conversation Json[]           @default([])
-  chat         Json[]           @default([])
-  createdAt    DateTime         @default(now()) @db.Timestamptz(3)
-  updatedAt    DateTime         @updatedAt @db.Timestamptz(3)
-  summary      String?          @db.Text
-  templateId   String?          @map("meeting_template_id")
-  template     MeetingTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
-  isActive     Boolean          @default(true)
-  isDeleted    Boolean          @default(false)
-  documents    Document[]       // Many-to-many relation with Document
-  
-  // Indexes for performance
-  @@index([userId])
-  @@index([templateId])
-  @@index([createdAt])
-  @@index([isActive])
-  @@index([isDeleted])
-  @@index([userId, isActive, isDeleted]) // Compound index for common queries
-  @@map("app_sessions")
-}
-
-// Document model with file management enhancements
-model Document {
-  id          String            @id @default(uuid())
+  id          String     @id
+  name        String
+  description String?
+  isActive    Boolean    @default(true)
   userId      String
-  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  fileUrl     String            @db.VarChar(2048) // Support for long URLs
-  awsFileUrl  String?           @db.VarChar(2048)
-  uploadedAt  DateTime          @default(now()) @db.Timestamptz(3)
-  updatedAt   DateTime          @updatedAt @db.Timestamptz(3)
-  title       String?           @db.VarChar(255)
-  description String?           @db.Text
-  fileSize    BigInt?           // File size in bytes
-  mimeType    String?           @db.VarChar(100)
-  fileName    String?           @db.VarChar(255) // Original file name
-  isEmbedded  Boolean           @default(false)
-  templates   MeetingTemplate[] // Many-to-many relation with MeetingTemplate
-  appSessions AppSession[]      // Many-to-many relation with AppSession
-  
-  // Indexes for performance
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  Document    Document[]
+
+  @@index([isActive])
   @@index([userId])
-  @@index([uploadedAt])
-  @@index([isEmbedded])
-  @@index([mimeType])
-  @@index([userId, isEmbedded]) // Compound index for user's embedded documents
-  @@map("documents")
 }
 
-// MeetingTemplate model with enhanced validation
-model MeetingTemplate {
-  id             String       @id @default(uuid())
-  userId         String
-  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  purpose        String       @db.VarChar(500)
-  goal           String       @db.Text
-  additionalInfo String?      @db.Text
-  duration       String       @default("30 mins") @db.VarChar(50)
-  createdAt      DateTime     @default(now()) @db.Timestamptz(3)
-  updatedAt      DateTime     @updatedAt @db.Timestamptz(3)
-  isActive       Boolean      @default(true)
-  documents      Document[]   // Many-to-many relation with Document
-  appSessions    AppSession[] // Many-to-many relation with AppSession
-  
-  // Indexes for performance
+model Document {
+  id          String     @id
+  name        String
+  fileName    String
+  filePath    String?
+  fileUrl     String?
+  fileSize    Int?
+  mimeType    String?
+  pageCount   Int?
+  embed       Boolean    @default(false)
+  embedStatus String?    @default("pending")
+  metadata    Json?
+  sessionId   String
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime
+  userId      String
+  AppSession  AppSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([embedStatus])
+  @@index([embed])
+  @@index([sessionId])
   @@index([userId])
-  @@index([createdAt])
-  @@index([isActive])
-  @@index([userId, isActive]) // Compound index for user's active templates
-  @@map("meeting_templates")
 }
