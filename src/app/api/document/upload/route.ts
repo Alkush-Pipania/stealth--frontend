@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
         const formData = await request.formData();
         const file = formData.get('file') as File;
         const name = formData.get('name') as string;
-        const sessionId = formData.get('sessionId') as string;
+        const sessionId = formData.get('sessionId') as string | null;
 
         // Validate required fields
         if (!file) {
@@ -110,17 +110,6 @@ export async function POST(request: NextRequest) {
                     success: false,
                     error: 'Name is required',
                     message: 'Please provide a name for the document',
-                },
-                { status: 400 }
-            );
-        }
-
-        if (!sessionId?.trim()) {
-            return Response.json(
-                {
-                    success: false,
-                    error: 'Session ID is required',
-                    message: 'Please provide a session ID',
                 },
                 { status: 400 }
             );
@@ -198,7 +187,7 @@ export async function POST(request: NextRequest) {
         const document = await prisma.document.create({
             data: {
                 userId,
-                sessionId,
+                sessionId: sessionId?.trim() || null,
                 name: name.trim(),
                 fileName: file.name,
                 fileUrl,

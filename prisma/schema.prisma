@@ -89,7 +89,7 @@ model AppSession {
 }
 
 model Document {
-  id          String     @id
+  id          String      @id
   name        String
   fileName    String
   filePath    String?
@@ -97,15 +97,15 @@ model Document {
   fileSize    Int?
   mimeType    String?
   pageCount   Int?
-  embed       Boolean    @default(false)
-  embedStatus String?    @default("pending")
+  embed       Boolean     @default(false)
+  embedStatus String?     @default("pending")
   metadata    Json?
-  sessionId   String
-  createdAt   DateTime   @default(now())
+  sessionId   String?
+  createdAt   DateTime    @default(now())
   updatedAt   DateTime
   userId      String
-  AppSession  AppSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  AppSession  AppSession? @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([embedStatus])
   @@index([embed])
