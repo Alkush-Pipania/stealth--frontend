@@ -3,6 +3,69 @@ import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { NextRequest } from "next/server";
 
+/**
+ * Process document embedding asynchronously
+ * This runs in the background and doesn't block the upload response
+ */
+async function processEmbedding(documentId: string, userId: string, fileUrl: string) {
+    try {
+        const embeddingApiUrl = process.env.EMBEDDING_API_URL || 'http://localhost:8000';
+
+        console.log(`Starting embedding process for document ${documentId}`);
+
+        const embeddingResponse = await fetch(`${embeddingApiUrl}/api/v1/embed/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                user_id: userId,
+                azure_url: fileUrl,
+            }),
+        });
+
+        if (!embeddingResponse.ok) {
+            const errorText = await embeddingResponse.text();
+            console.error('Embedding API error:', errorText);
+
+            // Update document status to failed
+            await prisma.document.update({
+                where: { id: documentId },
+                data: {
+                    embedStatus: 'failed',
+                    updatedAt: new Date(),
+                },
+            });
+        } else {
+            const embeddingResult = await embeddingResponse.json();
+
+            console.log(`Embedding completed for document ${documentId}`);
+
+            // Update document with embedding result
+            await prisma.document.update({
+                where: { id: documentId },
+                data: {
+                    embed: embeddingResult.status === 'completed' || embeddingResult.status === 'success',
+                    embedStatus: embeddingResult.status || 'completed',
+                    metadata: embeddingResult.embeddings ? embeddingResult : null,
+                    updatedAt: new Date(),
+                },
+            });
+        }
+    } catch (embeddingError) {
+        console.error('Error in embedding process:', embeddingError);
+
+        // Update document status to failed
+        await prisma.document.update({
+            where: { id: documentId },
+            data: {
+                embedStatus: 'failed',
+                updatedAt: new Date(),
+            },
+        });
+    }
+}
+
 export async function POST(request: NextRequest) {
     try {
         // Check authentication
@@ -146,73 +209,25 @@ export async function POST(request: NextRequest) {
             },
         });
 
-        // Send document to embedding service
-        try {
-            const embeddingApiUrl = process.env.EMBEDDING_API_URL || 'http://localhost:8000';
-            const embeddingResponse = await fetch(`${embeddingApiUrl}/api/v1/embed/`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    user_id: userId,
-                    azure_url: fileUrl,
-                }),
-            });
-
-            if (!embeddingResponse.ok) {
-                console.error('Embedding API error:', await embeddingResponse.text());
-                // Update document status to failed
-                await prisma.document.update({
-                    where: { id: document.id },
-                    data: {
-                        embedStatus: 'failed',
-                        updatedAt: new Date(),
-                    },
-                });
-            } else {
-                const embeddingResult = await embeddingResponse.json();
-
-                // Update document with embedding result
-                await prisma.document.update({
-                    where: { id: document.id },
-                    data: {
-                        embed: embeddingResult.status === 'completed' || embeddingResult.status === 'success',
-                        embedStatus: embeddingResult.status || 'completed',
-                        metadata: embeddingResult.embeddings ? embeddingResult : null,
-                        updatedAt: new Date(),
-                    },
-                });
-            }
-        } catch (embeddingError) {
-            console.error('Error calling embedding API:', embeddingError);
-            // Update document status to failed
-            await prisma.document.update({
-                where: { id: document.id },
-                data: {
-                    embedStatus: 'failed',
-                    updatedAt: new Date(),
-                },
-            });
-        }
-
-        // Fetch updated document
-        const updatedDocument = await prisma.document.findUnique({
-            where: { id: document.id },
+        // Process embedding asynchronously (non-blocking)
+        // This runs in the background and doesn't block the response
+        processEmbedding(document.id, userId, fileUrl).catch((error) => {
+            console.error('Background embedding process error:', error);
         });
 
+        // Return success immediately
         return Response.json({
             success: true,
             data: {
-                id: updatedDocument!.id,
-                name: updatedDocument!.name,
-                fileName: updatedDocument!.fileName,
-                fileUrl: updatedDocument!.fileUrl,
-                fileSize: updatedDocument!.fileSize,
-                mimeType: updatedDocument!.mimeType,
-                embed: updatedDocument!.embed,
-                embedStatus: updatedDocument!.embedStatus,
-                createdAt: updatedDocument!.createdAt.toISOString(),
+                id: document.id,
+                name: document.name,
+                fileName: document.fileName,
+                fileUrl: document.fileUrl,
+                fileSize: document.fileSize,
+                mimeType: document.mimeType,
+                embed: document.embed,
+                embedStatus: document.embedStatus,
+                createdAt: document.createdAt.toISOString(),
             },
             message: 'Document uploaded successfully',
         });
