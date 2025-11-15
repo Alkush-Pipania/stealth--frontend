@@ -15,7 +15,7 @@ export interface Document {
     embed: boolean;
     embedStatus: string | null;
     metadata: any | null;
-    sessionId: string;
+    sessionId: string | null;
     createdAt: string;
     updatedAt: string;
     userId: string;

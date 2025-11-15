@@ -95,11 +95,6 @@ export function UploadDialog({ open, onOpenChange, sessionId }: UploadDialogProp
       return;
     }
 
-    if (!sessionId) {
-      toast.error("Session ID is required to upload documents");
-      return;
-    }
-
     // Close dialog immediately
     onOpenChange(false);
 
@@ -108,7 +103,9 @@ export function UploadDialog({ open, onOpenChange, sessionId }: UploadDialogProp
       const formData = new FormData();
       formData.append("file", file);
       formData.append("name", name.trim());
-      formData.append("sessionId", sessionId);
+      if (sessionId) {
+        formData.append("sessionId", sessionId);
+      }
 
       const response = await fetch("/api/document/upload", {
         method: "POST",
@@ -248,15 +245,6 @@ export function UploadDialog({ open, onOpenChange, sessionId }: UploadDialogProp
             />
           </div>
 
-          {/* Session Warning */}
-          {!sessionId && (
-            <div className="rounded-md bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-900 p-3">
-              <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                No active session found. Please create a session first or wait for the default session to be created.
-              </p>
-            </div>
-          )}
-
           {/* Footer */}
           <div className="flex justify-end space-x-2 pt-4">
             <Button
@@ -269,7 +257,7 @@ export function UploadDialog({ open, onOpenChange, sessionId }: UploadDialogProp
             </Button>
             <Button
               type="submit"
-              disabled={!file || !name.trim() || isUploading || !sessionId}
+              disabled={!file || !name.trim() || isUploading}
             >
               {isUploading ? (
                 <>
