@@ -18,32 +18,46 @@ export async function GET(request : Request){
     const userId = session.user.id;
     
     try{
-        const appsession = await prisma.appSession.findMany({
-            where:{
-                userId,
-                isActive: true
+        // Get all sessions for the user, ordered by creation date
+        const appsessions = await prisma.appSession.findMany({
+            where: {
+                userId
             },
-            select:{
-                id:true,
-                name:true,
-                description:true,
-                createdAt:true,
-                isActive:true,
-                documents: {
-                    select:{
-                        id:true,
-                        fileUrl:true
+            select: {
+                id: true,
+                name: true,
+                description: true,
+                createdAt: true,
+                updatedAt: true,
+                isActive: true,
+                Document: {
+                    select: {
+                        id: true,
+                        name: true,
+                        fileName: true,
+                        fileUrl: true,
+                        fileSize: true,
+                        mimeType: true,
+                        embed: true,
+                        embedStatus: true,
+                        createdAt: true
+                    },
+                    orderBy: {
+                        createdAt: 'desc'
                     }
                 }
+            },
+            orderBy: {
+                createdAt: 'desc'
             }
-        })
+        });
 
         return Response.json({
             success: true,
-            data: appsession,
+            data: appsessions,
             message: 'App sessions retrieved successfully'
         });
-    }catch(error){
+    } catch(error) {
         console.error('Error fetching app sessions:', error);
         return Response.json(
             {
