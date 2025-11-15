@@ -1,27 +1,28 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import { apiGet } from '@/server/serverAction';
+import { apiGet, apiPost } from '@/server/serverAction';
 import { API_ENDPOINTS } from '@/server/endpoint';
 
 // Types for the session data
 interface Document {
     id: string;
-    fileUrl: string;
-}
-
-interface Template {
-    purpose: string;
-    goal: string;
-    additionalInfo: string;
+    name: string;
+    fileName: string;
+    fileUrl: string | null;
+    fileSize: number | null;
+    mimeType: string | null;
+    embed: boolean;
+    embedStatus: string | null;
+    createdAt: string;
 }
 
 interface AppSession {
     id: string;
     name: string;
-    description: string;
+    description: string | null;
     createdAt: string;
+    updatedAt: string;
     isActive: boolean;
-    documents: Document[];
-    template: Template;
+    Document: Document[];
 }
 
 interface GetAppSessionsResponse {
@@ -50,7 +51,7 @@ export const fetchAppSessions = createAsyncThunk<
                 return rejectWithValue(response.error || 'Failed to fetch app sessions');
             }
             
-            return response.data?.data || [];
+            return response.data || [];
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
             return rejectWithValue(errorMessage);
@@ -78,12 +79,12 @@ export const fetchAppSessionById = createAsyncThunk<
             if (!response.success) {
                 return rejectWithValue(response.error || 'Failed to fetch app session');
             }
-            
-            if (!response.data?.data) {
+
+            if (!response.data) {
                 return rejectWithValue('App session not found');
             }
-            
-            return response.data.data;
+
+            return response.data;
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
             return rejectWithValue(errorMessage);
@@ -105,12 +106,46 @@ export const refreshAppSessions = createAsyncThunk<
     async (_, { rejectWithValue }) => {
         try {
             const response = await apiGet<GetAppSessionsResponse>(API_ENDPOINTS.GET_APPSESSIONS);
-            
+
             if (!response.success) {
                 return rejectWithValue(response.error || 'Failed to refresh app sessions');
             }
-            
-            return response.data?.data || [];
+
+            return response.data || [];
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+            return rejectWithValue(errorMessage);
+        }
+    }
+);
+
+/**
+ * Async thunk to create a new app session
+ */
+export const createAppSession = createAsyncThunk<
+    AppSession,
+    { name: string; description?: string },
+    {
+        rejectValue: string;
+    }
+>(
+    'appSessions/createAppSession',
+    async (sessionData, { rejectWithValue }) => {
+        try {
+            const response = await apiPost<{ success: boolean; data: AppSession; message?: string; error?: string; }>(
+                API_ENDPOINTS.CREATE_SESSION,
+                sessionData
+            );
+
+            if (!response.success) {
+                return rejectWithValue(response.error || 'Failed to create app session');
+            }
+
+            if (!response.data) {
+                return rejectWithValue('App session creation failed');
+            }
+
+            return response.data;
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
             return rejectWithValue(errorMessage);

@@ -1,18 +1,26 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { fetchAppSessions, fetchAppSessionById, refreshAppSessions } from '../thunk/sessionthunk';
+import { fetchAppSessions, fetchAppSessionById, refreshAppSessions, createAppSession } from '../thunk/sessionthunk';
 
 interface Document{
-    id : string,
-    fileUrl : string
+    id: string,
+    name: string,
+    fileName: string,
+    fileUrl: string | null,
+    fileSize: number | null,
+    mimeType: string | null,
+    embed: boolean,
+    embedStatus: string | null,
+    createdAt: string
 }
 
 interface AppSession{
-    id : string,
-    name : string,
-    description : string,
-    createdAt : string,
-    isActive : boolean,
-    documents : Document[]
+    id: string,
+    name: string,
+    description: string | null,
+    createdAt: string,
+    updatedAt: string,
+    isActive: boolean,
+    Document: Document[]
 }
 
 interface session{
@@ -90,6 +98,21 @@ const AppSessionslice = createSlice({
             .addCase(refreshAppSessions.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload || 'Failed to refresh app sessions';
+            })
+            // Create App Session
+            .addCase(createAppSession.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(createAppSession.fulfilled, (state, action) => {
+                state.loading = false;
+                // Add the new session to the beginning of the array
+                state.AppSessions.unshift(action.payload);
+                state.error = null;
+            })
+            .addCase(createAppSession.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload || 'Failed to create app session';
             });
     }
 });
