@@ -4,18 +4,40 @@ import * as React from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { DataTable } from "@/components/documents";
 import { fetchDocuments } from "@/store/thunk/documentsthunk";
-import { fetchAppSessions } from "@/store/thunk/sessionthunk";
+import { fetchAppSessions, createAppSession } from "@/store/thunk/sessionthunk";
 import { AppDispatch, RootState } from "@/store";
 
 export default function DocumentsPage() {
   const dispatch = useDispatch<AppDispatch>();
   const { documents, loading, error } = useSelector((state: RootState) => state.documents);
-  const { AppSessions } = useSelector((state: RootState) => state.AppSessions);
+  const { AppSessions, loading: sessionsLoading } = useSelector((state: RootState) => state.AppSessions);
+  const [isCreatingDefaultSession, setIsCreatingDefaultSession] = React.useState(false);
 
   // Get the active session or the first session
   const activeSession = React.useMemo(() => {
     return AppSessions.find(session => session.isActive) || AppSessions[0];
   }, [AppSessions]);
+
+  // Create default session if none exists
+  React.useEffect(() => {
+    const createDefaultSession = async () => {
+      if (!sessionsLoading && AppSessions.length === 0 && !isCreatingDefaultSession) {
+        setIsCreatingDefaultSession(true);
+        try {
+          await dispatch(createAppSession({
+            name: "My Documents",
+            description: "Default session for document uploads"
+          })).unwrap();
+        } catch (error) {
+          console.error("Failed to create default session:", error);
+        } finally {
+          setIsCreatingDefaultSession(false);
+        }
+      }
+    };
+
+    createDefaultSession();
+  }, [dispatch, AppSessions.length, sessionsLoading, isCreatingDefaultSession]);
 
   React.useEffect(() => {
     dispatch(fetchAppSessions());
