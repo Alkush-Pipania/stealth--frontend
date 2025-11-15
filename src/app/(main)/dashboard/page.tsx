@@ -1,8 +1,13 @@
+"use client";
+
 import React from 'react'
 import { SessionsTable } from '@/components/dashboard/sessions/sessions-table'
 import { LiquidButton } from '@/components/liquid-glass-button'
+import { CreateSessionDialog } from '@/components/session'
 
 export default function DashboardPage() {
+  const [createDialogOpen, setCreateDialogOpen] = React.useState(false);
+
   return (
     <div className="flex flex-col space-y-6 md:space-y-8 p-4 md:p-8">
 
@@ -15,17 +20,21 @@ export default function DashboardPage() {
               View and manage your application sessions
             </p>
           </div>
-          <LiquidButton className="">
-          Create Session
-         </LiquidButton> 
-          
+          <LiquidButton className="" onClick={() => setCreateDialogOpen(true)}>
+            Create Session
+          </LiquidButton>
         </div>
-        
+
         {/* Sessions Table */}
         <div className="rounded-lg border bg-card md:border">
           <SessionsTable />
         </div>
       </div>
+
+      <CreateSessionDialog
+        open={createDialogOpen}
+        onOpenChange={setCreateDialogOpen}
+      />
     </div>
   )
 }

@@ -18,11 +18,11 @@ import { MoreHorizontal, Share, Trash2, Eye, Calendar, FileText, Activity } from
 interface AppSession {
   id: string;
   name: string;
-  description: string;
+  description: string | null;
   createdAt: string;
+  updatedAt: string;
   isActive: boolean;
-  documents: any[];
-  template: any;
+  Document: any[];
 }
 
 interface MobileSessionCardProps {
@@ -168,7 +168,7 @@ export function MobileSessionCard({ session }: MobileSessionCardProps) {
             <FileText className="h-4 w-4 text-muted-foreground" />
             <div>
               <p className="text-xs text-muted-foreground">Documents</p>
-              <p className="font-medium">{session.documents.length} files</p>
+              <p className="font-medium">{session.Document?.length || 0} files</p>
             </div>
           </div>
         </div>
