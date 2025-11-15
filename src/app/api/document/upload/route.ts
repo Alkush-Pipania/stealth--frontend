@@ -26,8 +26,8 @@ export async function POST(request: NextRequest) {
         // Parse form data
         const formData = await request.formData();
         const file = formData.get('file') as File;
-        const title = formData.get('title') as string;
-        const description = formData.get('description') as string;
+        const name = formData.get('name') as string;
+        const sessionId = formData.get('sessionId') as string;
 
         // Validate required fields
         if (!file) {
@@ -41,12 +41,23 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        if (!title?.trim()) {
+        if (!name?.trim()) {
             return Response.json(
                 {
                     success: false,
-                    error: 'Title is required',
-                    message: 'Please provide a title for the document',
+                    error: 'Name is required',
+                    message: 'Please provide a name for the document',
+                },
+                { status: 400 }
+            );
+        }
+
+        if (!sessionId?.trim()) {
+            return Response.json(
+                {
+                    success: false,
+                    error: 'Session ID is required',
+                    message: 'Please provide a session ID',
                 },
                 { status: 400 }
             );
@@ -119,18 +130,19 @@ export async function POST(request: NextRequest) {
         });
 
         const fileUrl = blockBlobClient.url;
-        
+
         // Save document to database
         const document = await prisma.document.create({
             data: {
                 userId,
-                fileUrl,
+                sessionId,
+                name: name.trim(),
                 fileName: file.name,
-                title: title.trim(),
-                description: description?.trim() || null,
-                fileSize: BigInt(file.size),
+                fileUrl,
+                fileSize: file.size,
                 mimeType: file.type || null,
-                isEmbedded: false, // Will be processed later
+                embed: false, // Will be processed later
+                embedStatus: 'pending',
             },
         });
 
@@ -138,11 +150,14 @@ export async function POST(request: NextRequest) {
             success: true,
             data: {
                 id: document.id,
+                name: document.name,
                 fileName: document.fileName,
-                title: document.title,
-                fileSize: Number(document.fileSize),
+                fileUrl: document.fileUrl,
+                fileSize: document.fileSize,
                 mimeType: document.mimeType,
-                uploadedAt: document.uploadedAt.toISOString(),
+                embed: document.embed,
+                embedStatus: document.embedStatus,
+                createdAt: document.createdAt.toISOString(),
             },
             message: 'Document uploaded successfully',
         });

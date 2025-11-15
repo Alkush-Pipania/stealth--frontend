@@ -43,12 +43,12 @@ export const formatDate = (dateString: string): string => {
 
 // Component for rendering document name
 export const DocumentNameCell = ({ document }: { document: Document }) => {
-  const displayName = document.title || document.fileName || "Untitled Document";
-  
+  const displayName = document.name || document.fileName || "Untitled Document";
+
   return (
     <div className="flex flex-col">
       <span className="font-medium">{displayName}</span>
-      {document.title && document.fileName && document.title !== document.fileName && (
+      {document.name && document.fileName && document.name !== document.fileName && (
         <span className="text-sm text-muted-foreground">{document.fileName}</span>
       )}
     </div>
@@ -63,15 +63,16 @@ export const FileSizeCell = ({ fileSize }: { fileSize: number | null }) => {
 };
 
 // Component for rendering upload date
-export const UploadDateCell = ({ uploadedAt }: { uploadedAt: string }) => {
-  return <span className="text-sm">{formatDate(uploadedAt)}</span>;
+export const UploadDateCell = ({ createdAt }: { createdAt: string }) => {
+  return <span className="text-sm">{formatDate(createdAt)}</span>;
 };
 
 // Component for rendering status
-export const StatusCell = ({ isEmbedded }: { isEmbedded: boolean }) => {
+export const StatusCell = ({ embedStatus }: { embedStatus: string | null }) => {
+  const isEmbedded = embedStatus === "completed";
   return (
     <Badge variant={isEmbedded ? "default" : "outline"}>
-      {isEmbedded ? "Embedded" : "Pending"}
+      {embedStatus === "completed" ? "Embedded" : embedStatus === "processing" ? "Processing" : "Pending"}
     </Badge>
   );
 };
@@ -95,18 +96,22 @@ export const ActionsCell = ({ document }: { document: Document }) => {
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem
-          onClick={() => window.open(document.fileUrl, "_blank")}
+          onClick={() => document.fileUrl && window.open(document.fileUrl, "_blank")}
+          disabled={!document.fileUrl}
         >
           <ExternalLink className="mr-2 h-4 w-4" />
           View document
         </DropdownMenuItem>
         <DropdownMenuItem
           onClick={() => {
-            const link = window.document.createElement("a");
-            link.href = document.fileUrl;
-            link.download = document.fileName || "document";
-            link.click();
+            if (document.fileUrl) {
+              const link = window.document.createElement("a");
+              link.href = document.fileUrl;
+              link.download = document.fileName || "document";
+              link.click();
+            }
           }}
+          disabled={!document.fileUrl}
         >
           <Download className="mr-2 h-4 w-4" />
           Download

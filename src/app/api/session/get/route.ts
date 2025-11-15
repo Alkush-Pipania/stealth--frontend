@@ -21,7 +21,7 @@ export async function GET(request : Request){
         const appsession = await prisma.appSession.findMany({
             where:{
                 userId,
-                isDeleted : false
+                isActive: true
             },
             select:{
                 id:true,
@@ -33,13 +33,6 @@ export async function GET(request : Request){
                     select:{
                         id:true,
                         fileUrl:true
-                    }
-                },
-                template : {
-                    select:{
-                        purpose: true,
-                        goal: true,
-                        additionalInfo:true
                     }
                 }
             }

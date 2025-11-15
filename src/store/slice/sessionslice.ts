@@ -6,20 +6,13 @@ interface Document{
     fileUrl : string
 }
 
-interface Template{
-    purpose : string,
-    goal : string,
-    additionalInfo : string
-}
-
 interface AppSession{
     id : string,
     name : string,
     description : string,
     createdAt : string,
     isActive : boolean,
-    documents : Document[],
-    template : Template
+    documents : Document[]
 }
 
 interface session{
