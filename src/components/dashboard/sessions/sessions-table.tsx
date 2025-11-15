@@ -141,6 +141,9 @@ export function SessionsTable() {
   const { AppSessions, loading, error } = useSelector((state: RootState) => state.AppSessions);
   const { isMobile } = useResponsive();
 
+  // Ensure AppSessions is always an array
+  const sessions = Array.isArray(AppSessions) ? AppSessions : [];
+
   useEffect(() => {
     dispatch(fetchAppSessions());
   }, [dispatch]);
@@ -226,14 +229,14 @@ export function SessionsTable() {
       <div className="space-y-4 p-4">
         {/* Mobile Header */}
         <div className="text-sm text-muted-foreground px-1">
-          {AppSessions.length === 0 
-            ? "No sessions found. Create your first session to get started." 
-            : `Showing ${AppSessions.length} session${AppSessions.length !== 1 ? 's' : ''}`
+          {sessions.length === 0
+            ? "No sessions found. Create your first session to get started."
+            : `Showing ${sessions.length} session${sessions.length !== 1 ? 's' : ''}`
           }
         </div>
-        
+
         {/* Mobile Cards */}
-        {AppSessions.length === 0 ? (
+        {sessions.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
             <div className="text-muted-foreground mb-2">No sessions available</div>
             <div className="text-sm text-muted-foreground">
@@ -242,7 +245,7 @@ export function SessionsTable() {
           </div>
         ) : (
           <div className="space-y-3">
-            {AppSessions.map((session: any) => (
+            {sessions.map((session: any) => (
               <MobileSessionCard key={session.id} session={session} />
             ))}
           </div>
@@ -256,9 +259,9 @@ export function SessionsTable() {
     <div className="rounded-md border">
       <Table>
         <TableCaption className="text-left p-4 text-muted-foreground">
-          {AppSessions.length === 0 
-            ? "No sessions found. Create your first session to get started." 
-            : `Showing ${AppSessions.length} session${AppSessions.length !== 1 ? 's' : ''}`
+          {sessions.length === 0
+            ? "No sessions found. Create your first session to get started."
+            : `Showing ${sessions.length} session${sessions.length !== 1 ? 's' : ''}`
           }
         </TableCaption>
         <TableHeader>
@@ -272,7 +275,7 @@ export function SessionsTable() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {AppSessions.length === 0 ? (
+          {sessions.length === 0 ? (
             <TableRow>
               <TableCell colSpan={6} className="h-32 text-center">
                 <div className="flex flex-col items-center justify-center space-y-2">
@@ -284,7 +287,7 @@ export function SessionsTable() {
               </TableCell>
             </TableRow>
           ) : (
-            AppSessions.map((session: any) => (
+            sessions.map((session: any) => (
               <TableRow key={session.id} className="group hover:bg-muted/50 transition-colors">
                 <TableCell className="font-medium">
                   <div className="flex flex-col">
