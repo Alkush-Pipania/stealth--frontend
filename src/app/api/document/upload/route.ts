@@ -131,7 +131,7 @@ export async function POST(request: NextRequest) {
 
         const fileUrl = blockBlobClient.url;
 
-        // Save document to database
+        // Save document to database with processing status
         const document = await prisma.document.create({
             data: {
                 userId,
@@ -141,23 +141,78 @@ export async function POST(request: NextRequest) {
                 fileUrl,
                 fileSize: file.size,
                 mimeType: file.type || null,
-                embed: false, // Will be processed later
-                embedStatus: 'pending',
+                embed: false,
+                embedStatus: 'processing',
             },
+        });
+
+        // Send document to embedding service
+        try {
+            const embeddingApiUrl = process.env.EMBEDDING_API_URL || 'http://localhost:8000';
+            const embeddingResponse = await fetch(`${embeddingApiUrl}/api/v1/embed/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    user_id: userId,
+                    azure_url: fileUrl,
+                }),
+            });
+
+            if (!embeddingResponse.ok) {
+                console.error('Embedding API error:', await embeddingResponse.text());
+                // Update document status to failed
+                await prisma.document.update({
+                    where: { id: document.id },
+                    data: {
+                        embedStatus: 'failed',
+                        updatedAt: new Date(),
+                    },
+                });
+            } else {
+                const embeddingResult = await embeddingResponse.json();
+
+                // Update document with embedding result
+                await prisma.document.update({
+                    where: { id: document.id },
+                    data: {
+                        embed: embeddingResult.status === 'completed' || embeddingResult.status === 'success',
+                        embedStatus: embeddingResult.status || 'completed',
+                        metadata: embeddingResult.embeddings ? embeddingResult : null,
+                        updatedAt: new Date(),
+                    },
+                });
+            }
+        } catch (embeddingError) {
+            console.error('Error calling embedding API:', embeddingError);
+            // Update document status to failed
+            await prisma.document.update({
+                where: { id: document.id },
+                data: {
+                    embedStatus: 'failed',
+                    updatedAt: new Date(),
+                },
+            });
+        }
+
+        // Fetch updated document
+        const updatedDocument = await prisma.document.findUnique({
+            where: { id: document.id },
         });
 
         return Response.json({
             success: true,
             data: {
-                id: document.id,
-                name: document.name,
-                fileName: document.fileName,
-                fileUrl: document.fileUrl,
-                fileSize: document.fileSize,
-                mimeType: document.mimeType,
-                embed: document.embed,
-                embedStatus: document.embedStatus,
-                createdAt: document.createdAt.toISOString(),
+                id: updatedDocument!.id,
+                name: updatedDocument!.name,
+                fileName: updatedDocument!.fileName,
+                fileUrl: updatedDocument!.fileUrl,
+                fileSize: updatedDocument!.fileSize,
+                mimeType: updatedDocument!.mimeType,
+                embed: updatedDocument!.embed,
+                embedStatus: updatedDocument!.embedStatus,
+                createdAt: updatedDocument!.createdAt.toISOString(),
             },
             message: 'Document uploaded successfully',
         });
