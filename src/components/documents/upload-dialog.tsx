@@ -13,21 +13,20 @@ import { fetchDocuments } from "@/store/thunk/documentsthunk";
 interface UploadDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  sessionId?: string;
 }
 
-export function UploadDialog({ open, onOpenChange }: UploadDialogProps) {
-  const [title, setTitle] = React.useState("");
-  const [description, setDescription] = React.useState("");
+export function UploadDialog({ open, onOpenChange, sessionId }: UploadDialogProps) {
+  const [name, setName] = React.useState("");
   const [file, setFile] = React.useState<File | null>(null);
   const [isUploading, setIsUploading] = React.useState(false);
   const [dragActive, setDragActive] = React.useState(false);
-  
+
   const dispatch = useDispatch<AppDispatch>();
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const resetForm = () => {
-    setTitle("");
-    setDescription("");
+    setName("");
     setFile(null);
   };
 
@@ -52,10 +51,10 @@ export function UploadDialog({ open, onOpenChange }: UploadDialogProps) {
     }
     
     setFile(selectedFile);
-    if (!title && selectedFile.name) {
-      // Auto-populate title with filename (without extension)
+    if (!name && selectedFile.name) {
+      // Auto-populate name with filename (without extension)
       const nameWithoutExtension = selectedFile.name.replace(/\.[^/.]+$/, "");
-      setTitle(nameWithoutExtension);
+      setName(nameWithoutExtension);
     }
   };
 
@@ -91,8 +90,13 @@ export function UploadDialog({ open, onOpenChange }: UploadDialogProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!file || !title.trim()) {
+
+    if (!file || !name.trim()) {
+      return;
+    }
+
+    if (!sessionId) {
+      toast.error("Session ID is required to upload documents");
       return;
     }
 
@@ -103,8 +107,8 @@ export function UploadDialog({ open, onOpenChange }: UploadDialogProps) {
       setIsUploading(true);
       const formData = new FormData();
       formData.append("file", file);
-      formData.append("title", title.trim());
-      formData.append("description", description.trim());
+      formData.append("name", name.trim());
+      formData.append("sessionId", sessionId);
 
       const response = await fetch("/api/document/upload", {
         method: "POST",
@@ -209,7 +213,7 @@ export function UploadDialog({ open, onOpenChange }: UploadDialogProps) {
                     onClick={(e) => {
                       e.stopPropagation();
                       setFile(null);
-                      setTitle("");
+                      setName("");
                     }}
                   >
                     Remove
@@ -232,28 +236,15 @@ export function UploadDialog({ open, onOpenChange }: UploadDialogProps) {
             </div>
           </div>
 
-          {/* Title Field */}
+          {/* Name Field */}
           <div className="space-y-2">
-            <Label htmlFor="title">Title *</Label>
+            <Label htmlFor="name">Name *</Label>
             <Input
-              id="title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Enter document title"
+              id="name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Enter document name"
               required
-            />
-          </div>
-
-          {/* Description Field */}
-          <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
-            <textarea
-              id="description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Enter document description (optional)"
-              className="w-full min-h-[80px] px-3 py-2 text-sm border border-input bg-background rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-              rows={3}
             />
           </div>
 
@@ -269,7 +260,7 @@ export function UploadDialog({ open, onOpenChange }: UploadDialogProps) {
             </Button>
             <Button
               type="submit"
-              disabled={!file || !title.trim() || isUploading}
+              disabled={!file || !name.trim() || isUploading || !sessionId}
             >
               {isUploading ? (
                 <>

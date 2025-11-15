@@ -4,13 +4,21 @@ import * as React from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { DataTable } from "@/components/documents";
 import { fetchDocuments } from "@/store/thunk/documentsthunk";
+import { fetchAppSessions } from "@/store/thunk/sessionthunk";
 import { AppDispatch, RootState } from "@/store";
 
 export default function DocumentsPage() {
   const dispatch = useDispatch<AppDispatch>();
   const { documents, loading, error } = useSelector((state: RootState) => state.documents);
+  const { AppSessions } = useSelector((state: RootState) => state.AppSessions);
+
+  // Get the active session or the first session
+  const activeSession = React.useMemo(() => {
+    return AppSessions.find(session => session.isActive) || AppSessions[0];
+  }, [AppSessions]);
 
   React.useEffect(() => {
+    dispatch(fetchAppSessions());
     dispatch(fetchDocuments());
   }, [dispatch]);
 
@@ -49,6 +57,7 @@ export default function DocumentsPage() {
           data={documents}
           isLoading={loading}
           onRefresh={handleRefresh}
+          sessionId={activeSession?.id}
         />
       </div>
     </div>

@@ -27,22 +27,23 @@ interface DataTableProps {
   data: Document[];
   isLoading?: boolean;
   onRefresh?: () => void;
+  sessionId?: string;
 }
 
-export function DataTable({ data, isLoading = false, onRefresh }: DataTableProps) {
+export function DataTable({ data, isLoading = false, onRefresh, sessionId }: DataTableProps) {
   const [searchTerm, setSearchTerm] = React.useState("");
   const [uploadDialogOpen, setUploadDialogOpen] = React.useState(false);
 
   // Filter documents based on search term
   const filteredData = React.useMemo(() => {
     if (!searchTerm) return data;
-    
+
     return data.filter((document) => {
       const searchLower = searchTerm.toLowerCase();
       const fileName = document.fileName?.toLowerCase() || "";
-      const title = document.title?.toLowerCase() || "";
-      
-      return fileName.includes(searchLower) || title.includes(searchLower);
+      const name = document.name?.toLowerCase() || "";
+
+      return fileName.includes(searchLower) || name.includes(searchLower);
     });
   }, [data, searchTerm]);
 
@@ -109,10 +110,10 @@ export function DataTable({ data, isLoading = false, onRefresh }: DataTableProps
                     <FileSizeCell fileSize={document.fileSize} />
                   </TableCell>
                   <TableCell>
-                    <UploadDateCell uploadedAt={document.uploadedAt} />
+                    <UploadDateCell createdAt={document.createdAt} />
                   </TableCell>
                   <TableCell>
-                    <StatusCell isEmbedded={document.isEmbedded} />
+                    <StatusCell embedStatus={document.embedStatus} />
                   </TableCell>
                   <TableCell className="text-right">
                     <ActionsCell document={document} />
@@ -144,9 +145,10 @@ export function DataTable({ data, isLoading = false, onRefresh }: DataTableProps
         </div>
       )}
       
-      <UploadDialog 
-        open={uploadDialogOpen} 
-        onOpenChange={setUploadDialogOpen} 
+      <UploadDialog
+        open={uploadDialogOpen}
+        onOpenChange={setUploadDialogOpen}
+        sessionId={sessionId}
       />
     </div>
   );
