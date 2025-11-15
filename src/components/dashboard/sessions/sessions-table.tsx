@@ -309,7 +309,7 @@ export function SessionsTable() {
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center space-x-1">
-                    <span className="text-sm font-medium">{session.documents.length}</span>
+                    <span className="text-sm font-medium">{session.Document?.length || 0}</span>
                     <span className="text-xs text-muted-foreground">files</span>
                   </div>
                 </TableCell>
