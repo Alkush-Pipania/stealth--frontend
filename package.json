@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@azure/storage-blob": "^12.28.0",
+    "@deepgram/sdk": "^4.11.2",
     "@paper-design/shaders-react": "^0.0.45",
     "@prisma/client": "^6.19.0",
     "@radix-ui/react-alert-dialog": "^1.1.14",
