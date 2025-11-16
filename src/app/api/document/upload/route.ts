@@ -11,8 +11,6 @@ async function processEmbedding(documentId: string, userId: string, fileUrl: str
     try {
         const embeddingApiUrl = process.env.EMBEDDING_API_URL || 'http://localhost:8000';
 
-        console.log(`Starting embedding process for document ${documentId}`);
-
         const embeddingResponse = await fetch(`${embeddingApiUrl}/api/v1/embed/`, {
             method: 'POST',
             headers: {
@@ -25,10 +23,6 @@ async function processEmbedding(documentId: string, userId: string, fileUrl: str
         });
 
         if (!embeddingResponse.ok) {
-            const errorText = await embeddingResponse.text();
-            console.error('Embedding API error:', errorText);
-
-            // Update document status to failed
             await prisma.document.update({
                 where: { id: documentId },
                 data: {
@@ -36,29 +30,43 @@ async function processEmbedding(documentId: string, userId: string, fileUrl: str
                     updatedAt: new Date(),
                 },
             });
-        } else {
-            const embeddingResult = await embeddingResponse.json();
+            return;
+        }
 
-            console.log(`Embedding completed for document ${documentId}`);
+        const embeddingResult = await embeddingResponse.json();
 
-            // Update document with embedding result
+        // Check if embedding was successful
+        // The API returns status: "success" when successful
+        const isSuccessful = embeddingResult?.status === 'success' || embeddingResult?.status === 'completed';
+        
+        // If successful, update to 'embed' status
+        if (isSuccessful) {
             await prisma.document.update({
                 where: { id: documentId },
                 data: {
-                    embed: embeddingResult.status === 'completed' || embeddingResult.status === 'success',
-                    embedStatus: embeddingResult.status || 'completed',
-                    metadata: embeddingResult.embeddings ? embeddingResult : null,
+                    embed: true,
+                    embedStatus: 'embed',
+                    metadata: embeddingResult?.embeddings ? embeddingResult : undefined,
+                    updatedAt: new Date(),
+                },
+            });
+        } else {
+            // If status is not success/completed, mark as failed
+            await prisma.document.update({
+                where: { id: documentId },
+                data: {
+                    embed: false,
+                    embedStatus: 'failed',
+                    metadata: embeddingResult?.error ? { error: embeddingResult.error } : undefined,
                     updatedAt: new Date(),
                 },
             });
         }
     } catch (embeddingError) {
-        console.error('Error in embedding process:', embeddingError);
-
-        // Update document status to failed
         await prisma.document.update({
             where: { id: documentId },
             data: {
+                embed: false,
                 embedStatus: 'failed',
                 updatedAt: new Date(),
             },
@@ -146,7 +154,7 @@ export async function POST(request: NextRequest) {
             );
         }
 
-                // Upload to Azure Blob Storage
+        // Upload to Azure Blob Storage
         const sasUrl = process.env.BlobserviceSASURL;
         const containerName = process.env.DOCUMENT_CONTAINER;
 
@@ -175,17 +183,51 @@ export async function POST(request: NextRequest) {
         const buffer = Buffer.from(arrayBuffer);
 
         // Upload with correct content-type
-        await blockBlobClient.uploadData(buffer, {
-            blobHTTPHeaders: {
-                blobContentType: file.type || "application/octet-stream",
-            },
-        });
+        let fileUrl: string;
+        try {
+            await blockBlobClient.uploadData(buffer, {
+                blobHTTPHeaders: {
+                    blobContentType: file.type || "application/octet-stream",
+                },
+            });
 
-        const fileUrl = blockBlobClient.url;
+            fileUrl = blockBlobClient.url;
+        } catch (uploadError: any) {
+            // Handle Azure authentication errors specifically
+            if (uploadError?.code === 'AuthenticationFailed' || uploadError?.statusCode === 403) {
+                const authDetail = uploadError?.details?.authenticationErrorDetail || '';
+                
+                // Check if it's an expiration issue
+                if (authDetail.includes('Signature not valid') || authDetail.includes('Expiry')) {
+                    return Response.json(
+                        {
+                            success: false,
+                            error: 'Storage authentication expired',
+                            message: 'The Azure storage access token has expired. Please update the BlobserviceSASURL environment variable with a new valid SAS token.',
+                            details: authDetail,
+                        },
+                        { status: 403 }
+                    );
+                }
+                
+                return Response.json(
+                    {
+                        success: false,
+                        error: 'Storage authentication failed',
+                        message: 'Failed to authenticate with Azure Blob Storage. Please check your BlobserviceSASURL configuration.',
+                        details: authDetail || uploadError?.message,
+                    },
+                    { status: 403 }
+                );
+            }
+            // Re-throw if it's not an authentication error
+            throw uploadError;
+        }
 
         // Save document to database with processing status
         const document = await prisma.document.create({
             data: {
+                id: crypto.randomUUID(),
                 userId,
                 sessionId: sessionId?.trim() || null,
                 name: name.trim(),
@@ -195,13 +237,14 @@ export async function POST(request: NextRequest) {
                 mimeType: file.type || null,
                 embed: false,
                 embedStatus: 'processing',
+                updatedAt: new Date(),
             },
         });
 
         // Process embedding asynchronously (non-blocking)
         // This runs in the background and doesn't block the response
-        processEmbedding(document.id, userId, fileUrl).catch((error) => {
-            console.error('Background embedding process error:', error);
+        processEmbedding(document.id, userId, fileUrl).catch(() => {
+            // Silently handle background errors
         });
 
         // Return success immediately
@@ -221,13 +264,41 @@ export async function POST(request: NextRequest) {
             message: 'Document uploaded successfully',
         });
 
-    } catch (error) {
-        console.error('Error uploading document:', error);
+    } catch (error: any) {
+        // Check if it's an Azure authentication error that wasn't caught earlier
+        if (error?.code === 'AuthenticationFailed' || error?.statusCode === 403) {
+            const authDetail = error?.details?.authenticationErrorDetail || '';
+            
+            if (authDetail.includes('Signature not valid') || authDetail.includes('Expiry')) {
+                return Response.json(
+                    {
+                        success: false,
+                        error: 'Storage authentication expired',
+                        message: 'The Azure storage access token has expired. Please update the BlobserviceSASURL environment variable with a new valid SAS token.',
+                        details: authDetail,
+                    },
+                    { status: 403 }
+                );
+            }
+            
+            return Response.json(
+                {
+                    success: false,
+                    error: 'Storage authentication failed',
+                    message: 'Failed to authenticate with Azure Blob Storage. Please check your BlobserviceSASURL configuration.',
+                    details: authDetail || error?.message,
+                },
+                { status: 403 }
+            );
+        }
+        
+        // Generic error handling
         return Response.json(
             {
                 success: false,
                 error: error instanceof Error ? error.message : 'Unknown error occurred',
                 message: 'Failed to upload document',
+                ...(error?.code && { code: error.code }),
             },
             { status: 500 }
         );

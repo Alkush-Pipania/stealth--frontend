@@ -72,7 +72,7 @@ export const StatusCell = ({ embedStatus }: { embedStatus: string | null }) => {
   const isEmbedded = embedStatus === "completed";
   return (
     <Badge variant={isEmbedded ? "default" : "outline"}>
-      {embedStatus === "completed" ? "Embedded" : embedStatus === "processing" ? "Processing" : "Pending"}
+      {embedStatus === "embed" || embedStatus === "success" ? "Embed" : embedStatus === "processing" ? "Processing" : "Pending"}
     </Badge>
   );
 };
