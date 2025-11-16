@@ -138,7 +138,7 @@ export const createAppSession = createAsyncThunk<
         try {
             const response = await apiPost<{ success: boolean; data: AppSession; message?: string; error?: string; }>(
                 API_ENDPOINTS.CREATE_SESSION,
-                sessionData
+                { body: sessionData }
             );
 
             if (!response.success || !response.data) {

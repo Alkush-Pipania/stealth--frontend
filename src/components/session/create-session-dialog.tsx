@@ -11,7 +11,6 @@ import { AppDispatch, RootState } from "@/store";
 import { createAppSession } from "@/store/thunk/sessionthunk";
 import { fetchDocuments } from "@/store/thunk/documentsthunk";
 import type { Document } from "@/store/thunk/documentsthunk";
-import { Checkbox } from "@/components/ui/checkbox";
 
 interface CreateSessionDialogProps {
   open: boolean;
@@ -198,24 +197,27 @@ export function CreateSessionDialog({ open, onOpenChange }: CreateSessionDialogP
                       <div
                         key={doc.id}
                         className={`
-                          flex items-center gap-3 p-3 hover:bg-muted/50 cursor-pointer border-b last:border-b-0
-                          ${selectedExistingDocs.has(doc.id) ? "bg-primary/5" : ""}
+                          flex items-center gap-3 p-3 hover:bg-muted/50 cursor-pointer border-b last:border-b-0 transition-colors
+                          ${selectedExistingDocs.has(doc.id) ? "bg-primary/10 border-primary/20" : ""}
                         `}
                         onClick={() => !isCreating && toggleExistingDoc(doc.id)}
                       >
-                        <Checkbox
-                          checked={selectedExistingDocs.has(doc.id)}
-                          onCheckedChange={() => toggleExistingDoc(doc.id)}
-                          disabled={isCreating}
-                        />
+                        <div className={`
+                          w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all
+                          ${selectedExistingDocs.has(doc.id)
+                            ? "bg-primary border-primary"
+                            : "border-muted-foreground/30"
+                          }
+                        `}>
+                          {selectedExistingDocs.has(doc.id) && (
+                            <Check className="h-3 w-3 text-primary-foreground" />
+                          )}
+                        </div>
                         <FileText className="h-4 w-4 text-primary flex-shrink-0" />
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium truncate">{doc.name}</p>
                           <p className="text-xs text-muted-foreground truncate">{doc.fileName}</p>
                         </div>
-                        {selectedExistingDocs.has(doc.id) && (
-                          <Check className="h-4 w-4 text-primary flex-shrink-0" />
-                        )}
                       </div>
                     ))}
                   </div>

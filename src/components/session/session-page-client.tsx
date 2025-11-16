@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { AppSession, Document } from "@prisma/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -9,11 +8,7 @@ import { AudioRecorder } from "./audio-recorder";
 import { TranscriptionDisplay } from "./transcription-display";
 import { FileText, Calendar } from "lucide-react";
 
-interface SessionPageClientProps {
-  session: AppSession & {
-    Document: Document[];
-  };
-}
+
 
 export interface TranscriptionEntry {
   speaker: number;
@@ -22,12 +17,18 @@ export interface TranscriptionEntry {
   confidence: number;
 }
 
-export default function SessionPageClient({ session }: SessionPageClientProps) {
+export default function SessionPageClient({ session }: any) {
   const [transcriptions, setTranscriptions] = useState<TranscriptionEntry[]>([]);
   const [isRecording, setIsRecording] = useState(false);
+  const [activeTab, setActiveTab] = useState("recording");
 
   const handleTranscription = (entry: TranscriptionEntry) => {
-    setTranscriptions((prev) => [...prev, entry]);
+    console.log("🎯 SessionPageClient received transcription:", entry);
+    setTranscriptions((prev) => {
+      const updated = [...prev, entry];
+      console.log("📋 Total transcriptions now:", updated.length);
+      return updated;
+    });
   };
 
   return (
@@ -56,31 +57,62 @@ export default function SessionPageClient({ session }: SessionPageClientProps) {
         </div>
       </div>
 
+      {/* Audio Recorder - Always mounted to keep recording active */}
+      <div className={activeTab !== "recording" ? "hidden" : ""}>
+        <Card>
+          <CardHeader>
+            <CardTitle>Audio Recording & Diarization</CardTitle>
+            <CardDescription>
+              Record your voice and meeting audio with real-time speaker diarization powered by Deepgram
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <AudioRecorder
+              sessionId={session.id}
+              onTranscription={handleTranscription}
+              isRecording={isRecording}
+              setIsRecording={setIsRecording}
+            />
+          </CardContent>
+        </Card>
+      </div>
+
       {/* Main Content */}
-      <Tabs defaultValue="recording" className="w-full">
+      <Tabs defaultValue="recording" value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="recording">Recording</TabsTrigger>
-          <TabsTrigger value="transcription">Transcription</TabsTrigger>
+          <TabsTrigger value="recording">
+            Recording {isRecording && <span className="ml-2 h-2 w-2 bg-red-500 rounded-full animate-pulse" />}
+          </TabsTrigger>
+          <TabsTrigger value="transcription">
+            Transcription {transcriptions.length > 0 && <Badge variant="secondary" className="ml-2">{transcriptions.length}</Badge>}
+          </TabsTrigger>
           <TabsTrigger value="documents">Documents</TabsTrigger>
         </TabsList>
 
         <TabsContent value="recording" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Audio Recording & Diarization</CardTitle>
-              <CardDescription>
-                Record your voice and meeting audio with real-time speaker diarization powered by Deepgram
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <AudioRecorder
-                sessionId={session.id}
-                onTranscription={handleTranscription}
-                isRecording={isRecording}
-                setIsRecording={setIsRecording}
-              />
-            </CardContent>
-          </Card>
+          {/* Live Transcription Display */}
+          {transcriptions.length > 0 ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>Live Transcription</CardTitle>
+                <CardDescription>
+                  Real-time transcription with speaker diarization - {transcriptions.length} segments
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <TranscriptionDisplay transcriptions={transcriptions} isRecording={isRecording} />
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <CardContent className="py-8">
+                <div className="text-center text-muted-foreground">
+                  <p className="text-lg font-medium mb-2">No transcriptions yet</p>
+                  <p className="text-sm">Start recording above to see live transcriptions appear here</p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
 
         <TabsContent value="transcription" className="space-y-4">
@@ -112,7 +144,7 @@ export default function SessionPageClient({ session }: SessionPageClientProps) {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {session.Document.map((doc) => (
+                  {session.Document.map((doc: any) => (
                     <div
                       key={doc.id}
                       className="flex items-center justify-between p-4 border rounded-lg hover:bg-accent/50 transition-colors"

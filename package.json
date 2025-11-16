@@ -10,7 +10,6 @@
   },
   "dependencies": {
     "@azure/storage-blob": "^12.28.0",
-    "@deepgram/sdk": "^4.11.2",
     "@paper-design/shaders-react": "^0.0.45",
     "@prisma/client": "^6.19.0",
     "@radix-ui/react-alert-dialog": "^1.1.14",
@@ -18,8 +17,10 @@
     "@radix-ui/react-dialog": "^1.1.14",
     "@radix-ui/react-dropdown-menu": "^2.1.15",
     "@radix-ui/react-label": "^2.1.7",
+    "@radix-ui/react-scroll-area": "^1.2.10",
     "@radix-ui/react-separator": "^1.1.7",
     "@radix-ui/react-slot": "^1.2.3",
+    "@radix-ui/react-tabs": "^1.1.13",
     "@radix-ui/react-tooltip": "^1.2.7",
     "@reduxjs/toolkit": "^2.8.2",
     "basehub": "^9.2.3",

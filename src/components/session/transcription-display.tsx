@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { User, Download, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 
 interface TranscriptionDisplayProps {
   transcriptions: TranscriptionEntry[];
@@ -27,7 +27,6 @@ const SPEAKER_COLORS = [
 
 export function TranscriptionDisplay({ transcriptions, isRecording }: TranscriptionDisplayProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const { toast } = useToast();
 
   // Auto-scroll to bottom when new transcriptions arrive
   useEffect(() => {
@@ -46,8 +45,7 @@ export function TranscriptionDisplay({ transcriptions, isRecording }: Transcript
       .join("\n\n");
 
     navigator.clipboard.writeText(text);
-    toast({
-      title: "Copied to Clipboard",
+    toast.success("Copied to Clipboard", {
       description: "Transcription has been copied to your clipboard",
     });
   };
@@ -71,8 +69,7 @@ export function TranscriptionDisplay({ transcriptions, isRecording }: Transcript
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
 
-    toast({
-      title: "Download Started",
+    toast.success("Download Started", {
       description: "Your transcription is being downloaded",
     });
   };

@@ -2,8 +2,8 @@ import { Suspense } from "react";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
-import { db } from "@/lib/db";
 import SessionPageClient from "@/components/session/session-page-client";
+import prisma from "@/lib/db";
 
 interface SessionPageProps {
   params: Promise<{ id: string }>;
@@ -22,7 +22,7 @@ export default async function SessionPage({ params }: SessionPageProps) {
   }
 
   // Fetch session data with documents
-  const appSession = await db.appSession.findUnique({
+  const appSession = await prisma.appSession.findUnique({
     where: {
       id,
       userId: session.user.id,
