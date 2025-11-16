@@ -136,8 +136,10 @@ export function AudioRecorder({
     }
 
     console.log("🔑 API Key loaded:", deepgramApiKey.substring(0, 10) + "...");
+    console.log("🔑 API Key length:", deepgramApiKey.length);
+    console.log("🔑 API Key trimmed:", deepgramApiKey.trim() === deepgramApiKey);
 
-    // Build URL with parameters
+    // Build URL with parameters - IMPORTANT: token must be in query params for browser
     const params = new URLSearchParams({
       model: "nova-2",
       encoding: "linear16",
@@ -145,19 +147,21 @@ export function AudioRecorder({
       channels: "1",
       diarize: "true",
       punctuate: "true",
-      interim_results: "false",
+      interim_results: "true", // Enable for live transcription feel
       utterance_end_ms: "1000",
       vad_events: "true",
+      smart_format: "true", // Better formatting
     });
 
-    const url = `wss://api.deepgram.com/v1/listen?${params.toString()}`;
+    // CRITICAL: Pass the token in the URL as Authorization query parameter
+    // This is more reliable for browser WebSocket than subprotocol method
+    const url = `wss://api.deepgram.com/v1/listen?${params.toString()}&token=${encodeURIComponent(deepgramApiKey.trim())}`;
 
     console.log("🌐 Connecting to Deepgram WebSocket...");
-    console.log("📍 URL:", url);
+    console.log("📍 URL (without token):", url.split('&token=')[0]);
 
-    // Deepgram uses Authorization header-style authentication via subprotocol
-    // Format: ["token", "YOUR_API_KEY"]
-    const socket = new WebSocket(url, ["token", deepgramApiKey]);
+    // Create WebSocket without subprotocol - token is in URL
+    const socket = new WebSocket(url);
 
     socket.onopen = () => {
       console.log("🔌 Connected to Deepgram");
@@ -170,50 +174,72 @@ export function AudioRecorder({
     socket.onmessage = (message) => {
       try {
         const data = JSON.parse(message.data);
-        
-        // Log all received data for debugging
-        console.log("📩 Deepgram response:", data);
+
+        // Log all received data for debugging (reduced verbosity)
+        if (data.type !== "Results") {
+          console.log("📩 Deepgram event:", data.type, data);
+        }
 
         // Handle transcription results
         if (data.type === "Results" && data.channel?.alternatives?.[0]) {
           const transcript = data.channel.alternatives[0].transcript;
-          
+
           // Only process if there's actual text
           if (transcript && transcript.trim().length > 0) {
             const words = data.channel.alternatives[0].words || [];
             const confidence = data.channel.alternatives[0].confidence || 0;
             const isFinal = data.is_final;
+            const speechFinal = data.speech_final; // Indicates end of speech segment
+
+            // Determine speaker from words (diarization only available in final results)
+            const speaker = words.length > 0 && words[0]?.speaker !== undefined
+              ? words[0].speaker
+              : 0;
 
             console.log("📝 Transcription:", {
-              transcript,
+              transcript: transcript.substring(0, 50) + (transcript.length > 50 ? "..." : ""),
               isFinal,
-              confidence,
-              speaker: words[0]?.speaker ?? 0,
+              speechFinal,
+              confidence: confidence.toFixed(2),
+              speaker,
+              wordsCount: words.length,
             });
 
-            // Only add final transcriptions to avoid duplicates
-            if (isFinal) {
+            // Add final transcriptions with speaker diarization
+            // speech_final means end of utterance, more reliable than is_final
+            if (speechFinal || isFinal) {
               const entry: TranscriptionEntry = {
-                speaker: words[0]?.speaker ?? 0,
+                speaker: speaker,
                 text: transcript,
                 timestamp: Date.now(),
                 confidence: confidence,
               };
 
-              console.log("✅ Adding transcription entry:", entry);
+              console.log("✅ Adding final transcription:", {
+                speaker: entry.speaker,
+                text: entry.text.substring(0, 50) + (entry.text.length > 50 ? "..." : ""),
+                confidence: entry.confidence.toFixed(2),
+              });
+
               onTranscription(entry);
+            } else {
+              // Log interim results for debugging (not added to UI)
+              console.log("💬 Interim:", transcript.substring(0, 40) + "...");
             }
           }
         }
 
         // Handle metadata events
         if (data.type === "Metadata") {
-          console.log("📊 Deepgram Metadata:", data);
+          console.log("📊 Deepgram Metadata:", {
+            model: data.model_info,
+            channels: data.channels,
+          });
         }
 
         // Handle utterance end events
         if (data.type === "UtteranceEnd") {
-          console.log("🔚 Utterance ended");
+          console.log("🔚 Utterance ended at", data.last_word_end);
         }
 
         // Handle speech started events
@@ -222,43 +248,63 @@ export function AudioRecorder({
         }
 
       } catch (error) {
-        console.error("❌ Error parsing Deepgram message:", error);
+        console.error("❌ Error parsing Deepgram message:", error, message.data);
       }
     };
 
     socket.onerror = (error) => {
       console.error("❌ Deepgram WebSocket error:", error);
-      console.error("❌ This usually means:");
-      console.error("   1. Invalid API key");
-      console.error("   2. API key not set in .env.local");
-      console.error("   3. Need to restart dev server after adding API key");
+      console.error("❌ Common causes:");
+      console.error("   1. Invalid or expired API key");
+      console.error("   2. API key not set in DEEPGRAM_API_KEY environment variable");
+      console.error("   3. Network/firewall blocking WebSocket connections");
+      console.error("   4. Deepgram service temporarily unavailable");
+      console.error("💡 Debug steps:");
+      console.error("   - Verify API key at: https://console.deepgram.com/");
+      console.error("   - Check API key has no extra spaces/newlines");
+      console.error("   - Test endpoint: /api/deepgram/token");
+      console.error("   - Restart dev server after changing .env.local");
       setConnectionStatus("error");
-      toast.error("Connection Error", {
-        description: "Check console for details. Verify DEEPGRAM_API_KEY in .env.local",
+      toast.error("WebSocket Connection Failed", {
+        description: "Check console for detailed error info. Verify your Deepgram API key is valid.",
+        duration: 5000,
       });
     };
 
     socket.onclose = (event) => {
       console.log("🔌 Disconnected from Deepgram");
-      console.log("Close code:", event.code, "Reason:", event.reason || "No reason provided");
+      console.log("📊 Close details:", {
+        code: event.code,
+        reason: event.reason || "No reason provided",
+        wasClean: event.wasClean,
+      });
       setConnectionStatus("disconnected");
-      
+
       if (event.code !== 1000) {
         console.error("❌ Abnormal closure. Code:", event.code);
-        console.error("Common causes:");
-        console.error("  - Code 1006: Authentication failed (invalid API key)");
-        console.error("  - Code 1002: Protocol error");
-        console.error("  - Code 1008: Policy violation (rate limit, quota)");
-        
-        let errorMsg = "Connection failed. ";
+        console.error("📋 WebSocket Close Code Reference:");
+        console.error("  - 1000: Normal closure");
+        console.error("  - 1006: Abnormal closure (often auth failure or network issue)");
+        console.error("  - 1002: Protocol error");
+        console.error("  - 1008: Policy violation (rate limit, quota exceeded)");
+        console.error("  - 1011: Server error");
+
+        let errorMsg = "Connection closed unexpectedly. ";
+        let errorTitle = "Connection Error";
+
         if (event.code === 1006) {
-          errorMsg += "Please verify your Deepgram API key is valid and active.";
+          errorMsg = "Authentication likely failed. Please verify your Deepgram API key is valid and has no extra whitespace.";
+          errorTitle = "Authentication Error";
+        } else if (event.code === 1008) {
+          errorMsg = "Rate limit or quota exceeded. Check your Deepgram account usage.";
+          errorTitle = "Quota Error";
         } else {
-          errorMsg += `Error code: ${event.code}`;
+          errorMsg += `WebSocket close code: ${event.code}`;
         }
-        
-        toast.error("Connection Error", {
+
+        toast.error(errorTitle, {
           description: errorMsg,
+          duration: 5000,
         });
       }
     };
@@ -402,15 +448,16 @@ export function AudioRecorder({
         <Alert>
           <CheckCircle className="h-4 w-4" />
           <AlertDescription>
-            Deepgram real-time transcription with speaker diarization is ready. 
-            Start recording to see live transcriptions with speaker identification.
+            Deepgram real-time transcription ready with live diarization.
+            Interim results enabled for instant feedback, final results saved with speaker identification.
           </AlertDescription>
         </Alert>
       ) : (
         <Alert>
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
-            Please configure DEEPGRAM_API_KEY in your environment variables to enable transcription.
+            Configure DEEPGRAM_API_KEY in .env.local to enable real-time transcription.
+            Get your key at console.deepgram.com
           </AlertDescription>
         </Alert>
       )}
