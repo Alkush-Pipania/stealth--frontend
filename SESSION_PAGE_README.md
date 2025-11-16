@@ -15,7 +15,7 @@ This document describes the implementation of the session page with real-time au
 
 ### Pages
 
-- **`/dashboard/session/[id]`** - Session detail page (Server Component)
+- **`/session/[id]`** - Session detail page (Server Component)
   - Handles authentication
   - Fetches session data from database
   - Passes data to client component
@@ -68,7 +68,7 @@ To get a Deepgram API key:
 
 ### 3. Access the Session Page
 
-Navigate to `/dashboard/session/[session-id]` where `[session-id]` is a valid session ID from your database.
+Navigate to `/session/[session-id]` where `[session-id]` is a valid session ID from your database.
 
 ## Usage Flow
 
@@ -133,10 +133,9 @@ The implementation uses the following Deepgram settings:
 src/
 ├── app/
 │   ├── (main)/
-│   │   └── dashboard/
-│   │       └── session/
-│   │           └── [id]/
-│   │               └── page.tsx              # Session detail page
+│   │   └── session/
+│   │       └── [id]/
+│   │           └── page.tsx                  # Session detail page
 │   └── api/
 │       └── deepgram/
 │           └── stream/
