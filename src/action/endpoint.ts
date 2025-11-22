@@ -1,12 +1,11 @@
-// Backend API Base URL from environment variable
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000';
+import { BACKEND_URL } from '@/config/env';
 
 // API Endpoints
 export const API_ENDPOINTS = {
   // Auth endpoints
-  LOGIN: `${BACKEND_URL}/login`,
-  SIGNUP: `${BACKEND_URL}/signup`,
-  LOGOUT: `${BACKEND_URL}/logout`,
+  LOGIN: `${BACKEND_URL}/api/auth/login`,
+  SIGNUP: `${BACKEND_URL}/api/auth/signup`,
+  LOGOUT: `${BACKEND_URL}/api/auth/logout`,
 
   // Session endpoints
   GET_SESSIONS: `${BACKEND_URL}/sessions`,

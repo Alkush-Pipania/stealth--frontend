@@ -23,6 +23,7 @@
     "@radix-ui/react-tabs": "^1.1.13",
     "@radix-ui/react-tooltip": "^1.2.7",
     "@reduxjs/toolkit": "^2.8.2",
+    "axios": "^1.13.2",
     "basehub": "^9.2.3",
     "better-auth": "^1.2.12",
     "class-variance-authority": "^0.7.1",
