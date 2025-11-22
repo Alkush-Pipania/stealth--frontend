@@ -1,41 +1,40 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
+// Document interface matching backend response
 export interface Document {
     id: string;
-    name: string;
-    fileName: string;
-    filePath: string | null;
-    fileUrl: string | null;
-    fileSize: number | null;
-    mimeType: string | null;
-    pageCount: number | null;
-    embed: boolean;
-    embedStatus: string | null;
-    metadata: any | null;
-    sessionId: string | null;
-    createdAt: string;
-    updatedAt: string;
-    userId: string;
+    filename: string;
+    contentType: string | null;
+    pages: number | null;
+    status: string;
+    uploadedAt: string;
 }
 
 interface DocumentState {
     loading: boolean;
     error: string | null;
     documents: Document[];
+    currentCaseId: string | null;
 }
 
 const initialState: DocumentState = {
     loading: false,
     error: null,
     documents: [],
+    currentCaseId: null,
 };
 
 const documentSlice = createSlice({
     name: 'documents',
     initialState,
     reducers: {
-        setDocuments: (state, action: PayloadAction<Document[]>) => {
-            state.documents = action.payload;
+        setDocuments: (state, action: PayloadAction<{ caseId: string; documents: Document[] }>) => {
+            state.documents = action.payload.documents;
+            state.currentCaseId = action.payload.caseId;
+        },
+        clearDocuments: (state) => {
+            state.documents = [];
+            state.currentCaseId = null;
         },
         clearError: (state) => {
             state.error = null;
@@ -43,8 +42,11 @@ const documentSlice = createSlice({
         setLoading: (state, action: PayloadAction<boolean>) => {
             state.loading = action.payload;
         },
+        setError: (state, action: PayloadAction<string>) => {
+            state.error = action.payload;
+        },
     }
 });
 
-export const { setDocuments, clearError, setLoading } = documentSlice.actions;
+export const { setDocuments, clearDocuments, clearError, setLoading, setError } = documentSlice.actions;
 export default documentSlice.reducer;

@@ -15,11 +15,10 @@ export const API_ENDPOINTS = {
   DELETE_CASE: (id: string) => `${BACKEND_URL}/api/cases/${id}`,
 
   // Document endpoints
-  GET_DOCUMENTS: `${BACKEND_URL}/documents`,
-  UPLOAD_DOCUMENT: `${BACKEND_URL}/documents/upload`,
-  GET_DOCUMENT_BY_ID: (id: string) => `${BACKEND_URL}/documents/${id}`,
-  UPDATE_DOCUMENT: (id: string) => `${BACKEND_URL}/documents/${id}`,
-  DELETE_DOCUMENT: (id: string) => `${BACKEND_URL}/documents/${id}`,
+  GET_CASE_DOCUMENTS: (caseId: string) => `${BACKEND_URL}/api/cases/${caseId}/documents`,
+  UPLOAD_DOCUMENT: (caseId: string) => `${BACKEND_URL}/api/cases/${caseId}/documents`,
+  GET_DOCUMENT_BY_ID: (caseId: string, documentId: string) => `${BACKEND_URL}/api/cases/${caseId}/documents/${documentId}`,
+  DELETE_DOCUMENT: (caseId: string, documentId: string) => `${BACKEND_URL}/api/cases/${caseId}/documents/${documentId}`,
 } as const;
 
 export default API_ENDPOINTS;
