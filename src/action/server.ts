@@ -2,6 +2,7 @@ import axios, { AxiosError, AxiosRequestConfig } from 'axios';
 
 // Token management
 const TOKEN_KEY = 'auth_token';
+const USER_ID_KEY = 'user_id';
 
 export const tokenManager = {
   getToken: (): string | null => {
@@ -20,6 +21,25 @@ export const tokenManager = {
   removeToken: (): void => {
     if (typeof window !== 'undefined') {
       localStorage.removeItem(TOKEN_KEY);
+    }
+  },
+
+  getUserId: (): string | null => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem(USER_ID_KEY);
+    }
+    return null;
+  },
+
+  setUserId: (userId: string): void => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(USER_ID_KEY, userId);
+    }
+  },
+
+  removeUserId: (): void => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(USER_ID_KEY);
     }
   },
 };

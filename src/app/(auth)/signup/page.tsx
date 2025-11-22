@@ -20,6 +20,7 @@ interface SignupResponse {
   message: string;
   user: any;
   token: string;
+  userId: string;
 }
 
 export default function SignUpPage() {
@@ -62,8 +63,11 @@ export default function SignUpPage() {
       });
 
       if (response.success && response.data?.token) {
-        // Save token to localStorage
+        // Save token and userId to localStorage
         tokenManager.setToken(response.data.token);
+        if (response.data.userId) {
+          tokenManager.setUserId(response.data.userId);
+        }
 
         // Show success message
         toast.success(response.data.message || "Account created successfully!");
