@@ -7,8 +7,7 @@ import {
   ChevronDown,
   Briefcase,
   Settings,
-  Files,
-  HelpCircle
+  Files
 } from "lucide-react"
 
 import {
@@ -40,11 +39,6 @@ const menuItems = [
     title: "Documents",
     url: "/dashboard/documents",
     icon: Files
-  },
-  {
-    title: "Question",
-    url: "/dashboard/question",
-    icon: HelpCircle
   },
   {
     title: "Settings",

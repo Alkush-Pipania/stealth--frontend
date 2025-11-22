@@ -17,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatDate } from "@/lib/utils";
 import { FileText } from "lucide-react";
+import Link from "next/link";
 
 // Status badge component
 function CaseStatus({ status }: { status: string }) {
@@ -130,31 +131,33 @@ export function CasesTable() {
             </TableRow>
           ) : (
             cases.map((caseItem) => (
-              <TableRow key={caseItem.id} className="group hover:bg-muted/50 transition-colors cursor-pointer">
-                <TableCell className="font-medium">
-                  <div className="flex flex-col">
-                    <span className="font-semibold">{caseItem.title}</span>
-                    <span className="text-xs text-muted-foreground font-mono">
-                      {caseItem.id.slice(0, 8)}...
-                    </span>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div className="max-w-[300px] truncate" title={caseItem.description || undefined}>
-                    {caseItem.description || <span className="text-muted-foreground italic">No description</span>}
-                  </div>
-                </TableCell>
-                <TableCell>
-                  {caseItem.jurisdiction || <span className="text-muted-foreground italic">N/A</span>}
-                </TableCell>
-                <TableCell>
-                  <CaseStatus status={caseItem.status} />
-                </TableCell>
-                <TableCell>
-                  <div className="text-sm">
-                    {formatDate(caseItem.createdAt)}
-                  </div>
-                </TableCell>
+              <TableRow key={caseItem.id} className="group hover:bg-muted/50 transition-colors cursor-pointer" asChild>
+                <Link href={`/case/${caseItem.id}`}>
+                  <TableCell className="font-medium">
+                    <div className="flex flex-col">
+                      <span className="font-semibold">{caseItem.title}</span>
+                      <span className="text-xs text-muted-foreground font-mono">
+                        {caseItem.id.slice(0, 8)}...
+                      </span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="max-w-[300px] truncate" title={caseItem.description || undefined}>
+                      {caseItem.description || <span className="text-muted-foreground italic">No description</span>}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    {caseItem.jurisdiction || <span className="text-muted-foreground italic">N/A</span>}
+                  </TableCell>
+                  <TableCell>
+                    <CaseStatus status={caseItem.status} />
+                  </TableCell>
+                  <TableCell>
+                    <div className="text-sm">
+                      {formatDate(caseItem.createdAt)}
+                    </div>
+                  </TableCell>
+                </Link>
               </TableRow>
             ))
           )}
