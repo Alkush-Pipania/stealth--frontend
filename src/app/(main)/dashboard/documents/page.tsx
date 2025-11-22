@@ -1,14 +1,11 @@
 "use client";
 
 import * as React from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import { DataTable } from "@/components/documents";
-import { fetchDocuments } from "@/store/thunk/documentsthunk";
-import { fetchAppSessions } from "@/store/thunk/sessionthunk";
-import { AppDispatch, RootState } from "@/store";
+import { RootState } from "@/store";
 
 export default function DocumentsPage() {
-  const dispatch = useDispatch<AppDispatch>();
   const { documents, loading, error } = useSelector((state: RootState) => state.documents);
   const { AppSessions } = useSelector((state: RootState) => state.AppSessions);
 
@@ -17,14 +14,11 @@ export default function DocumentsPage() {
     return AppSessions.find(session => session.isActive) || AppSessions[0];
   }, [AppSessions]);
 
-  React.useEffect(() => {
-    dispatch(fetchAppSessions());
-    dispatch(fetchDocuments());
-  }, [dispatch]);
+  // API calls removed - add your own backend integration here
 
   const handleRefresh = React.useCallback(() => {
-    dispatch(fetchDocuments());
-  }, [dispatch]);
+    // Add your own refresh logic here
+  }, []);
 
   return (
     <div className="container mx-auto py-8">

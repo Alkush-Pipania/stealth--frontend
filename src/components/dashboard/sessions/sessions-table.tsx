@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useSelector, useDispatch } from "react-redux";
-import { RootState, AppDispatch } from "@/store";
-import { fetchAppSessions } from "@/store/thunk/sessionthunk";
+import { useState } from "react";
+import { useSelector } from "react-redux";
+import { RootState } from "@/store";
 import {
   Table,
   TableBody,
@@ -137,16 +136,13 @@ function SessionActions({ session }: { session: any }) {
 }
 
 export function SessionsTable() {
-  const dispatch = useDispatch<AppDispatch>();
   const { AppSessions, loading, error } = useSelector((state: RootState) => state.AppSessions);
   const { isMobile } = useResponsive();
 
   // Ensure AppSessions is always an array
   const sessions = Array.isArray(AppSessions) ? AppSessions : [];
 
-  useEffect(() => {
-    dispatch(fetchAppSessions());
-  }, [dispatch]);
+  // API calls removed - add your own backend integration here
 
   if (loading) {
     if (isMobile) {

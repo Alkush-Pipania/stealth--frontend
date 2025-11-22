@@ -1,6 +1,22 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { fetchDocuments } from '../thunk/documentsthunk';
-import type { Document } from '../thunk/documentsthunk';
+
+export interface Document {
+    id: string;
+    name: string;
+    fileName: string;
+    filePath: string | null;
+    fileUrl: string | null;
+    fileSize: number | null;
+    mimeType: string | null;
+    pageCount: number | null;
+    embed: boolean;
+    embedStatus: string | null;
+    metadata: any | null;
+    sessionId: string | null;
+    createdAt: string;
+    updatedAt: string;
+    userId: string;
+}
 
 interface DocumentState {
     loading: boolean;
@@ -27,23 +43,7 @@ const documentSlice = createSlice({
         setLoading: (state, action: PayloadAction<boolean>) => {
             state.loading = action.payload;
         },
-    },
-    extraReducers: (builder) => {
-        builder
-            .addCase(fetchDocuments.pending, (state) => {
-                state.loading = true;
-                state.error = null;
-            })
-            .addCase(fetchDocuments.fulfilled, (state, action) => {
-                state.loading = false;
-                state.documents = action.payload;
-                state.error = null;
-            })
-            .addCase(fetchDocuments.rejected, (state, action) => {
-                state.loading = false;
-                state.error = action.payload || 'Failed to fetch documents';
-            });
-    },
+    }
 });
 
 export const { setDocuments, clearError, setLoading } = documentSlice.actions;
