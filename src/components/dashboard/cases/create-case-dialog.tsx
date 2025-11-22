@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useDispatch } from "react-redux";
+import { useRouter } from "next/navigation";
 import { AppDispatch } from "@/store";
 import { createCase } from "@/store/thunk/casesthunk";
 import { Button } from "@/components/ui/button";
@@ -26,6 +27,7 @@ interface CreateCaseDialogProps {
 
 export function CreateCaseDialog({ onCaseCreated }: CreateCaseDialogProps) {
   const dispatch = useDispatch<AppDispatch>();
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -49,7 +51,7 @@ export function CreateCaseDialog({ onCaseCreated }: CreateCaseDialogProps) {
         jurisdiction: jurisdiction.trim() || null,
       }));
 
-      if (result.success) {
+      if (result.success && result.case) {
         toast.success("Case created successfully");
 
         // Reset form
@@ -62,6 +64,9 @@ export function CreateCaseDialog({ onCaseCreated }: CreateCaseDialogProps) {
         if (onCaseCreated) {
           onCaseCreated();
         }
+
+        // Redirect to the newly created case page
+        router.push(`/case/${result.case.id}`);
       } else {
         toast.error(result.error || "Failed to create case");
       }
