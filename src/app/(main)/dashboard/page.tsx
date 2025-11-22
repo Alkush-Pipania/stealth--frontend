@@ -6,8 +6,12 @@ import { CreateCaseDialog } from '@/components/dashboard/cases/create-case-dialo
 import { useDispatch } from 'react-redux'
 import { AppDispatch } from '@/store'
 import { fetchCases } from '@/store/thunk/casesthunk'
+import { useProtectedRoute } from '@/hooks/useProtectedRoute'
 
 export default function DashboardPage() {
+  // Protect this route - redirect to /signin if not authenticated
+  useProtectedRoute();
+
   const dispatch = useDispatch<AppDispatch>();
 
   const handleCaseCreated = () => {

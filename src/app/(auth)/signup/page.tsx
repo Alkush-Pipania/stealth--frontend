@@ -14,6 +14,7 @@ import { Github, Mail, Loader2, AlertCircle } from "lucide-react";
 import { apiPost, tokenManager } from "@/action/server";
 import { API_ENDPOINTS } from "@/action/endpoint";
 import { toast } from "sonner";
+import { useRedirectIfAuthenticated } from "@/hooks/useRedirectIfAuthenticated";
 
 interface SignupResponse {
   message: string;
@@ -22,6 +23,9 @@ interface SignupResponse {
 }
 
 export default function SignUpPage() {
+  // Redirect to dashboard if already logged in
+  useRedirectIfAuthenticated();
+
   const router = useRouter();
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
