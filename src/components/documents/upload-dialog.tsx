@@ -6,6 +6,20 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { apiGet, apiPost } from "@/action/server";
+import { API_ENDPOINTS } from "@/action/endpoint";
+
+interface Case {
+  id: string;
+  title: string;
+}
 
 interface UploadDialogProps {
   open: boolean;
@@ -18,12 +32,43 @@ export function UploadDialog({ open, onOpenChange, sessionId }: UploadDialogProp
   const [file, setFile] = React.useState<File | null>(null);
   const [isUploading, setIsUploading] = React.useState(false);
   const [dragActive, setDragActive] = React.useState(false);
+  const [selectedCase, setSelectedCase] = React.useState<string>("");
+  const [cases, setCases] = React.useState<Case[]>([]);
+  const [loadingCases, setLoadingCases] = React.useState(false);
 
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  // Fetch cases when dialog opens
+  React.useEffect(() => {
+    if (open) {
+      fetchCases();
+    }
+  }, [open]);
+
+  const fetchCases = async () => {
+    setLoadingCases(true);
+    try {
+      const response = await apiGet<{ cases: Case[] }>(API_ENDPOINTS.GET_CASES, {
+        includeAuth: true,
+      });
+
+      if (response.success && response.data?.cases) {
+        setCases(response.data.cases);
+      } else {
+        toast.error("Failed to fetch cases");
+      }
+    } catch (error) {
+      console.error("Error fetching cases:", error);
+      toast.error("Failed to load cases");
+    } finally {
+      setLoadingCases(false);
+    }
+  };
 
   const resetForm = () => {
     setName("");
     setFile(null);
+    setSelectedCase("");
   };
 
   const handleClose = () => {
@@ -87,14 +132,62 @@ export function UploadDialog({ open, onOpenChange, sessionId }: UploadDialogProp
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!file || !name.trim()) {
+    if (!file || !name.trim() || !selectedCase) {
+      toast.error("Please fill all required fields");
       return;
     }
 
-    // API call removed - add your own backend integration here
-    toast.info("Upload functionality removed. Add your own backend API.");
-    onOpenChange(false);
-    resetForm();
+    setIsUploading(true);
+
+    try {
+      // Step 1: Get presigned URL from backend
+      const presignResponse = await apiPost<{
+        document_id: string;
+        upload_url: string;
+        expires_in: number;
+      }>(API_ENDPOINTS.PRESIGN_UPLOAD(selectedCase), {
+        body: {
+          filename: file.name,
+          content_type: file.type,
+          size_bytes: file.size,
+          userId: "temp-user-id", // TODO: Get actual userId from JWT token
+        },
+        includeAuth: true,
+      });
+
+      if (!presignResponse.success || !presignResponse.data?.upload_url) {
+        toast.error("Failed to get upload URL");
+        setIsUploading(false);
+        return;
+      }
+
+      const { upload_url, document_id } = presignResponse.data;
+
+      // Step 2: Upload file to R2 using presigned URL
+      const uploadResponse = await fetch(upload_url, {
+        method: "PUT",
+        body: file,
+        headers: {
+          "Content-Type": file.type,
+        },
+      });
+
+      if (!uploadResponse.ok) {
+        toast.error("Failed to upload file to storage");
+        setIsUploading(false);
+        return;
+      }
+
+      // Success!
+      toast.success("Document uploaded successfully!");
+      onOpenChange(false);
+      resetForm();
+    } catch (error) {
+      console.error("Upload error:", error);
+      toast.error("Failed to upload document");
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const formatFileSize = (bytes: number): string => {
@@ -203,6 +296,23 @@ export function UploadDialog({ open, onOpenChange, sessionId }: UploadDialogProp
             </div>
           </div>
 
+          {/* Case Selection */}
+          <div className="space-y-2">
+            <Label htmlFor="case">Case *</Label>
+            <Select value={selectedCase} onValueChange={setSelectedCase}>
+              <SelectTrigger id="case">
+                <SelectValue placeholder={loadingCases ? "Loading cases..." : "Select a case"} />
+              </SelectTrigger>
+              <SelectContent>
+                {cases.map((caseItem) => (
+                  <SelectItem key={caseItem.id} value={caseItem.id}>
+                    {caseItem.title}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           {/* Name Field */}
           <div className="space-y-2">
             <Label htmlFor="name">Name *</Label>
@@ -227,7 +337,7 @@ export function UploadDialog({ open, onOpenChange, sessionId }: UploadDialogProp
             </Button>
             <Button
               type="submit"
-              disabled={!file || !name.trim() || isUploading}
+              disabled={!file || !name.trim() || !selectedCase || isUploading}
             >
               {isUploading ? (
                 <>
