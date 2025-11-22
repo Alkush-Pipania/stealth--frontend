@@ -1,6 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { useDispatch } from "react-redux";
+import { AppDispatch } from "@/store";
+import { createCase } from "@/store/thunk/casesthunk";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -16,14 +19,13 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Plus, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { apiPost } from "@/action/server";
-import { API_ENDPOINTS } from "@/action/endpoint";
 
 interface CreateCaseDialogProps {
   onCaseCreated?: () => void;
 }
 
 export function CreateCaseDialog({ onCaseCreated }: CreateCaseDialogProps) {
+  const dispatch = useDispatch<AppDispatch>();
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -41,16 +43,13 @@ export function CreateCaseDialog({ onCaseCreated }: CreateCaseDialogProps) {
     setIsLoading(true);
 
     try {
-      const response = await apiPost(API_ENDPOINTS.CREATE_CASE, {
-        body: {
-          title: title.trim(),
-          description: description.trim() || null,
-          jurisdiction: jurisdiction.trim() || null,
-        },
-        includeAuth: true,
-      });
+      const result = await dispatch(createCase({
+        title: title.trim(),
+        description: description.trim() || null,
+        jurisdiction: jurisdiction.trim() || null,
+      }));
 
-      if (response.success) {
+      if (result.success) {
         toast.success("Case created successfully");
 
         // Reset form
@@ -64,7 +63,7 @@ export function CreateCaseDialog({ onCaseCreated }: CreateCaseDialogProps) {
           onCaseCreated();
         }
       } else {
-        toast.error(response.error || "Failed to create case");
+        toast.error(result.error || "Failed to create case");
       }
     } catch (error) {
       toast.error("Failed to create case");
