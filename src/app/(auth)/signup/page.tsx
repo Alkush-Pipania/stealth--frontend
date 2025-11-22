@@ -2,35 +2,92 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Github, Mail } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Github, Mail, Loader2, AlertCircle } from "lucide-react";
+import { apiPost, tokenManager } from "@/action/server";
+import { API_ENDPOINTS } from "@/action/endpoint";
+import { toast } from "sonner";
+
+interface SignupResponse {
+  message: string;
+  user: any;
+  token: string;
+}
 
 export default function SignUpPage() {
-  const [name, setName] = useState("");
+  const router = useRouter();
+  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [acceptTerms, setAcceptTerms] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // No functionality - add your own backend integration here
-    console.log("Sign up clicked", { name, email, password, confirmPassword, acceptTerms });
+    setError(null);
+
+    // Validate passwords match
+    if (password !== confirmPassword) {
+      setError("Passwords do not match");
+      toast.error("Passwords do not match");
+      return;
+    }
+
+    // Validate terms accepted
+    if (!acceptTerms) {
+      setError("You must accept the terms and conditions");
+      toast.error("You must accept the terms and conditions");
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const response = await apiPost<SignupResponse>(API_ENDPOINTS.SIGNUP, {
+        body: { username, email, password },
+        includeAuth: false, // Don't include auth token for signup
+      });
+
+      if (response.success && response.data?.token) {
+        // Save token to localStorage
+        tokenManager.setToken(response.data.token);
+
+        // Show success message
+        toast.success(response.data.message || "Account created successfully!");
+
+        // Redirect to dashboard
+        router.push("/dashboard");
+      } else {
+        // Handle error from backend
+        setError(response.error || "Failed to create account");
+        toast.error(response.error || "Failed to create account");
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "An error occurred during signup";
+      setError(errorMessage);
+      toast.error(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleGithubSignUp = () => {
-    // No functionality - add your own OAuth integration here
-    console.log("GitHub sign up clicked");
+    // OAuth integration - add your own implementation
+    toast.info("GitHub OAuth not implemented yet");
   };
 
   const handleGoogleSignUp = () => {
-    // No functionality - add your own OAuth integration here
-    console.log("Google sign up clicked");
+    // OAuth integration - add your own implementation
+    toast.info("Google OAuth not implemented yet");
   };
 
   return (
@@ -42,13 +99,21 @@ export default function SignUpPage() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Error Alert */}
+        {error && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+
         {/* OAuth Buttons */}
         <div className="grid grid-cols-2 gap-4">
-          <Button variant="outline" onClick={handleGithubSignUp}>
+          <Button variant="outline" onClick={handleGithubSignUp} disabled={isLoading}>
             <Github className="mr-2 h-4 w-4" />
             GitHub
           </Button>
-          <Button variant="outline" onClick={handleGoogleSignUp}>
+          <Button variant="outline" onClick={handleGoogleSignUp} disabled={isLoading}>
             <Mail className="mr-2 h-4 w-4" />
             Google
           </Button>
@@ -68,13 +133,14 @@ export default function SignUpPage() {
         {/* Sign Up Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="name">Name</Label>
+            <Label htmlFor="username">Username</Label>
             <Input
-              id="name"
+              id="username"
               type="text"
-              placeholder="John Doe"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              placeholder="johndoe"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              disabled={isLoading}
               required
             />
           </div>
@@ -86,6 +152,7 @@ export default function SignUpPage() {
               placeholder="m@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              disabled={isLoading}
               required
             />
           </div>
@@ -96,7 +163,9 @@ export default function SignUpPage() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              disabled={isLoading}
               required
+              minLength={6}
             />
           </div>
           <div className="space-y-2">
@@ -106,7 +175,9 @@ export default function SignUpPage() {
               type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
+              disabled={isLoading}
               required
+              minLength={6}
             />
           </div>
           <div className="flex items-center space-x-2">
@@ -114,6 +185,7 @@ export default function SignUpPage() {
               id="terms"
               checked={acceptTerms}
               onCheckedChange={(checked) => setAcceptTerms(checked as boolean)}
+              disabled={isLoading}
             />
             <label
               htmlFor="terms"
@@ -125,8 +197,15 @@ export default function SignUpPage() {
               </Link>
             </label>
           </div>
-          <Button type="submit" className="w-full" disabled={!acceptTerms}>
-            Create account
+          <Button type="submit" className="w-full" disabled={isLoading || !acceptTerms}>
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Creating account...
+              </>
+            ) : (
+              "Create account"
+            )}
           </Button>
         </form>
       </CardContent>
