@@ -4,8 +4,12 @@ import * as React from "react"
 import { useParams } from "next/navigation"
 import { CaseSidebar } from "@/components/case/sidebar"
 import { SidebarInset } from "@/components/ui/sidebar"
+import { useProtectedRoute } from "@/hooks/useProtectedRoute"
 
 export default function CasePage() {
+  // Protect this route - redirect to /signin if not authenticated
+  useProtectedRoute()
+
   const params = useParams()
   const caseId = params.caseId as string
   const [activeSection, setActiveSection] = React.useState<"questions" | "documents">("questions")
