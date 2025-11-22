@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "@/store";
 import { createCase } from "@/store/thunk/casesthunk";
@@ -25,6 +26,7 @@ interface CreateCaseDialogProps {
 }
 
 export function CreateCaseDialog({ onCaseCreated }: CreateCaseDialogProps) {
+  const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
@@ -49,7 +51,7 @@ export function CreateCaseDialog({ onCaseCreated }: CreateCaseDialogProps) {
         jurisdiction: jurisdiction.trim() || null,
       }));
 
-      if (result.success) {
+      if (result.success && result.case) {
         toast.success("Case created successfully");
 
         // Reset form
@@ -57,6 +59,9 @@ export function CreateCaseDialog({ onCaseCreated }: CreateCaseDialogProps) {
         setDescription("");
         setJurisdiction("");
         setOpen(false);
+
+        // Redirect to case detail page
+        router.push(`/case/${result.case.id}`);
 
         // Notify parent component
         if (onCaseCreated) {

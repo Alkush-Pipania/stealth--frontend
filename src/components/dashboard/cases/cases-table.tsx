@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState, AppDispatch } from "@/store";
 import { fetchCases } from "@/store/thunk/casesthunk";
@@ -43,12 +44,17 @@ function CaseStatus({ status }: { status: string }) {
 }
 
 export function CasesTable() {
+  const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
   const { cases, loading, error } = useSelector((state: RootState) => state.cases);
 
   useEffect(() => {
     dispatch(fetchCases());
   }, [dispatch]);
+
+  const handleCaseClick = (caseId: string) => {
+    router.push(`/case/${caseId}`);
+  };
 
   if (loading) {
     return (
@@ -130,7 +136,11 @@ export function CasesTable() {
             </TableRow>
           ) : (
             cases.map((caseItem) => (
-              <TableRow key={caseItem.id} className="group hover:bg-muted/50 transition-colors cursor-pointer">
+              <TableRow
+                key={caseItem.id}
+                className="group hover:bg-muted/50 transition-colors cursor-pointer"
+                onClick={() => handleCaseClick(caseItem.id)}
+              >
                 <TableCell className="font-medium">
                   <div className="flex flex-col">
                     <span className="font-semibold">{caseItem.title}</span>

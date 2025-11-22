@@ -5,10 +5,8 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
   ChevronDown,
-  Briefcase,
   Settings,
   Files,
-  HelpCircle
 } from "lucide-react"
 
 import {
@@ -32,19 +30,9 @@ import Image from "next/image"
 
 const menuItems = [
   {
-    title: "Cases",
-    url: "/dashboard",
-    icon: Briefcase
-  },
-  {
     title: "Documents",
     url: "/dashboard/documents",
     icon: Files
-  },
-  {
-    title: "Question",
-    url: "/dashboard/question",
-    icon: HelpCircle
   },
   {
     title: "Settings",
