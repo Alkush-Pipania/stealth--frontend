@@ -6,9 +6,6 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useDispatch } from "react-redux";
-import { AppDispatch } from "@/store";
-import { fetchDocuments } from "@/store/thunk/documentsthunk";
 
 interface UploadDialogProps {
   open: boolean;
@@ -22,7 +19,6 @@ export function UploadDialog({ open, onOpenChange, sessionId }: UploadDialogProp
   const [isUploading, setIsUploading] = React.useState(false);
   const [dragActive, setDragActive] = React.useState(false);
 
-  const dispatch = useDispatch<AppDispatch>();
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const resetForm = () => {
@@ -95,36 +91,10 @@ export function UploadDialog({ open, onOpenChange, sessionId }: UploadDialogProp
       return;
     }
 
-    // Close dialog immediately
+    // API call removed - add your own backend integration here
+    toast.info("Upload functionality removed. Add your own backend API.");
     onOpenChange(false);
-
-    const uploadPromise = (async () => {
-      setIsUploading(true);
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("name", name.trim());
-      if (sessionId) {
-        formData.append("sessionId", sessionId);
-      }
-
-      const response = await fetch("/api/document/upload", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (response.ok) {
-        dispatch(fetchDocuments());
-        return "Document uploaded successfully";
-      }
-      const errorData = await response.json();
-      throw new Error(errorData?.message || "Upload failed");
-    })();
-
-    toast.promise(uploadPromise, {
-      loading: "Uploading document...",
-      success: (msg: string | unknown) => msg as string,
-      error: (err: unknown) => (err as Error).message || "Failed to upload document",
-    });
+    resetForm();
   };
 
   const formatFileSize = (bytes: number): string => {
