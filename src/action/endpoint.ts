@@ -1,5 +1,4 @@
-// Backend API Base URL from environment variable
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000';
+import { BACKEND_URL } from '@/config/env';
 
 // API Endpoints
 export const API_ENDPOINTS = {

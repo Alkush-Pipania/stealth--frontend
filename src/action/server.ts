@@ -1,3 +1,5 @@
+import axios, { AxiosError, AxiosRequestConfig } from 'axios';
+
 // Token management
 const TOKEN_KEY = 'auth_token';
 
@@ -38,7 +40,7 @@ interface ApiResponse<T = any> {
 }
 
 // Build headers with optional authentication
-const buildHeaders = (customHeaders?: Record<string, string>, includeAuth = true): HeadersInit => {
+const buildHeaders = (customHeaders?: Record<string, string>, includeAuth = true): Record<string, string> => {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...customHeaders,
@@ -56,29 +58,43 @@ const buildHeaders = (customHeaders?: Record<string, string>, includeAuth = true
 };
 
 // Handle API response
-const handleResponse = async <T>(response: Response): Promise<ApiResponse<T>> => {
-  const contentType = response.headers.get('content-type');
-  const isJson = contentType?.includes('application/json');
-
-  let data;
-  if (isJson) {
-    data = await response.json();
-  } else {
-    data = await response.text();
-  }
-
-  if (!response.ok) {
-    return {
-      success: false,
-      error: data?.error || data?.message || `Request failed with status ${response.status}`,
-      data: data,
-    };
-  }
-
+const handleResponse = <T>(response: any): ApiResponse<T> => {
   return {
     success: true,
-    data: data,
-    message: data?.message,
+    data: response.data,
+    message: response.data?.message,
+  };
+};
+
+// Handle API error
+const handleError = (error: unknown): ApiResponse => {
+  if (axios.isAxiosError(error)) {
+    const axiosError = error as AxiosError<any>;
+
+    // Server responded with error status
+    if (axiosError.response) {
+      return {
+        success: false,
+        error: axiosError.response.data?.error ||
+               axiosError.response.data?.message ||
+               `Request failed with status ${axiosError.response.status}`,
+        data: axiosError.response.data,
+      };
+    }
+
+    // Request was made but no response received
+    if (axiosError.request) {
+      return {
+        success: false,
+        error: 'No response from server. Please check your connection.',
+      };
+    }
+  }
+
+  // Something else happened
+  return {
+    success: false,
+    error: error instanceof Error ? error.message : 'Unknown error occurred',
   };
 };
 
@@ -92,17 +108,16 @@ export async function apiGet<T = any>(
   try {
     const { headers, includeAuth = true } = options;
 
-    const response = await fetch(url, {
+    const config: AxiosRequestConfig = {
       method: 'GET',
+      url,
       headers: buildHeaders(headers, includeAuth),
-    });
-
-    return await handleResponse<T>(response);
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error occurred',
     };
+
+    const response = await axios(config);
+    return handleResponse<T>(response);
+  } catch (error) {
+    return handleError(error);
   }
 }
 
@@ -116,18 +131,17 @@ export async function apiPost<T = any>(
   try {
     const { body, headers, includeAuth = true } = options;
 
-    const response = await fetch(url, {
+    const config: AxiosRequestConfig = {
       method: 'POST',
+      url,
+      data: body,
       headers: buildHeaders(headers, includeAuth),
-      body: body ? JSON.stringify(body) : undefined,
-    });
-
-    return await handleResponse<T>(response);
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error occurred',
     };
+
+    const response = await axios(config);
+    return handleResponse<T>(response);
+  } catch (error) {
+    return handleError(error);
   }
 }
 
@@ -141,18 +155,17 @@ export async function apiPut<T = any>(
   try {
     const { body, headers, includeAuth = true } = options;
 
-    const response = await fetch(url, {
+    const config: AxiosRequestConfig = {
       method: 'PUT',
+      url,
+      data: body,
       headers: buildHeaders(headers, includeAuth),
-      body: body ? JSON.stringify(body) : undefined,
-    });
-
-    return await handleResponse<T>(response);
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error occurred',
     };
+
+    const response = await axios(config);
+    return handleResponse<T>(response);
+  } catch (error) {
+    return handleError(error);
   }
 }
 
@@ -166,17 +179,16 @@ export async function apiDelete<T = any>(
   try {
     const { headers, includeAuth = true } = options;
 
-    const response = await fetch(url, {
+    const config: AxiosRequestConfig = {
       method: 'DELETE',
+      url,
       headers: buildHeaders(headers, includeAuth),
-    });
-
-    return await handleResponse<T>(response);
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error occurred',
     };
+
+    const response = await axios(config);
+    return handleResponse<T>(response);
+  } catch (error) {
+    return handleError(error);
   }
 }
 
@@ -190,17 +202,16 @@ export async function apiPatch<T = any>(
   try {
     const { body, headers, includeAuth = true } = options;
 
-    const response = await fetch(url, {
+    const config: AxiosRequestConfig = {
       method: 'PATCH',
+      url,
+      data: body,
       headers: buildHeaders(headers, includeAuth),
-      body: body ? JSON.stringify(body) : undefined,
-    });
-
-    return await handleResponse<T>(response);
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error occurred',
     };
+
+    const response = await axios(config);
+    return handleResponse<T>(response);
+  } catch (error) {
+    return handleError(error);
   }
 }
