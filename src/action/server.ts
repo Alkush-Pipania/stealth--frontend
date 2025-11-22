@@ -139,6 +139,7 @@ export async function apiPost<T = any>(
     };
 
     const response = await axios(config);
+    console.log(response)
     return handleResponse<T>(response);
   } catch (error) {
     return handleError(error);
