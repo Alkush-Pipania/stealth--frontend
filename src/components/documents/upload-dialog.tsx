@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { apiGet, apiPost } from "@/action/server";
+import { apiGet, apiPost, tokenManager } from "@/action/server";
 import { API_ENDPOINTS } from "@/action/endpoint";
 
 interface Case {
@@ -140,6 +140,14 @@ export function UploadDialog({ open, onOpenChange, sessionId }: UploadDialogProp
     setIsUploading(true);
 
     try {
+      // Get userId from localStorage
+      const userId = tokenManager.getUserId();
+      if (!userId) {
+        toast.error("User not authenticated");
+        setIsUploading(false);
+        return;
+      }
+
       // Step 1: Get presigned URL from backend
       const presignResponse = await apiPost<{
         document_id: string;
@@ -150,7 +158,7 @@ export function UploadDialog({ open, onOpenChange, sessionId }: UploadDialogProp
           filename: file.name,
           content_type: file.type,
           size_bytes: file.size,
-          userId: "temp-user-id", // TODO: Get actual userId from JWT token
+          userId: userId,
         },
         includeAuth: true,
       });

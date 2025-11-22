@@ -18,6 +18,7 @@ import { useRedirectIfAuthenticated } from "@/hooks/useRedirectIfAuthenticated";
 interface LoginResponse {
   message: string;
   token: string;
+  userId: string;
 }
 
 export default function SignInPage() {
@@ -42,8 +43,11 @@ export default function SignInPage() {
       });
 
       if (response.success && response.data?.token) {
-        // Save token to localStorage
+        // Save token and userId to localStorage
         tokenManager.setToken(response.data.token);
+        if (response.data.userId) {
+          tokenManager.setUserId(response.data.userId);
+        }
 
         // Show success message
         toast.success(response.data.message || "Login successful!");
