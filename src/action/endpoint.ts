@@ -7,12 +7,12 @@ export const API_ENDPOINTS = {
   SIGNUP: `${BACKEND_URL}/api/auth/signup`,
   LOGOUT: `${BACKEND_URL}/api/auth/logout`,
 
-  // Session endpoints
-  GET_SESSIONS: `${BACKEND_URL}/sessions`,
-  CREATE_SESSION: `${BACKEND_URL}/sessions`,
-  GET_SESSION_BY_ID: (id: string) => `${BACKEND_URL}/sessions/${id}`,
-  UPDATE_SESSION: (id: string) => `${BACKEND_URL}/sessions/${id}`,
-  DELETE_SESSION: (id: string) => `${BACKEND_URL}/sessions/${id}`,
+  // Cases endpoints
+  GET_CASES: `${BACKEND_URL}/api/cases`,
+  CREATE_CASE: `${BACKEND_URL}/api/cases`,
+  GET_CASE_BY_ID: (id: string) => `${BACKEND_URL}/api/cases/${id}`,
+  UPDATE_CASE: (id: string) => `${BACKEND_URL}/api/cases/${id}`,
+  DELETE_CASE: (id: string) => `${BACKEND_URL}/api/cases/${id}`,
 
   // Document endpoints
   GET_DOCUMENTS: `${BACKEND_URL}/documents`,

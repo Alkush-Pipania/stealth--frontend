@@ -13,6 +13,7 @@ import { Github, Mail, Loader2, AlertCircle } from "lucide-react";
 import { apiPost, tokenManager } from "@/action/server";
 import { API_ENDPOINTS } from "@/action/endpoint";
 import { toast } from "sonner";
+import { useRedirectIfAuthenticated } from "@/hooks/useRedirectIfAuthenticated";
 
 interface LoginResponse {
   message: string;
@@ -20,6 +21,9 @@ interface LoginResponse {
 }
 
 export default function SignInPage() {
+  // Redirect to dashboard if already logged in
+  useRedirectIfAuthenticated();
+
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
