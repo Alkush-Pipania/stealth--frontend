@@ -1,40 +1,39 @@
 "use client";
 
 import React from 'react'
-import { SessionsTable } from '@/components/dashboard/sessions/sessions-table'
-import { LiquidButton } from '@/components/liquid-glass-button'
-import { CreateSessionDialog } from '@/components/session'
+import { CasesTable } from '@/components/dashboard/cases/cases-table'
+import { CreateCaseDialog } from '@/components/dashboard/cases/create-case-dialog'
+import { useDispatch } from 'react-redux'
+import { AppDispatch } from '@/store'
+import { fetchCases } from '@/store/thunk/casesthunk'
 
 export default function DashboardPage() {
-  const [createDialogOpen, setCreateDialogOpen] = React.useState(false);
+  const dispatch = useDispatch<AppDispatch>();
+
+  const handleCaseCreated = () => {
+    // Refresh cases list after creating a new case
+    dispatch(fetchCases());
+  };
 
   return (
     <div className="flex flex-col space-y-6 md:space-y-8 p-4 md:p-8">
-
-      {/* Sessions Section */}
+      {/* Cases Section */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-2xl font-semibold tracking-tight">Sessions</h2>
+            <h2 className="text-2xl font-semibold tracking-tight">Cases</h2>
             <p className="text-sm text-muted-foreground">
-              View and manage your application sessions
+              View and manage your legal cases
             </p>
           </div>
-          <LiquidButton className="" onClick={() => setCreateDialogOpen(true)}>
-            Create Session
-          </LiquidButton>
+          <CreateCaseDialog onCaseCreated={handleCaseCreated} />
         </div>
 
-        {/* Sessions Table */}
+        {/* Cases Table */}
         <div className="rounded-lg border bg-card md:border">
-          <SessionsTable />
+          <CasesTable />
         </div>
       </div>
-
-      <CreateSessionDialog
-        open={createDialogOpen}
-        onOpenChange={setCreateDialogOpen}
-      />
     </div>
   )
 }
