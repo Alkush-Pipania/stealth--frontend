@@ -172,12 +172,11 @@ export function UploadDialog({ open, onOpenChange, sessionId }: UploadDialogProp
       const { upload_url, document_id } = presignResponse.data;
 
       // Step 2: Upload file to R2 using presigned URL
+      // Note: Don't set Content-Type header to avoid CORS preflight
+      // The presigned URL already includes the content type
       const uploadResponse = await fetch(upload_url, {
         method: "PUT",
         body: file,
-        headers: {
-          "Content-Type": file.type,
-        },
       });
 
       if (!uploadResponse.ok) {
