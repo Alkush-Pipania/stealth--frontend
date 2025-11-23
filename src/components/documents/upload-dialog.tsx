@@ -89,7 +89,7 @@ export function UploadDialog({ open, onOpenChange, sessionId, caseId }: UploadDi
   const handleFileSelect = (selectedFile: File) => {
     // Validate file type - backend only allows PDF
     const allowedTypes = ['application/pdf'];
-    const MAX_SIZE = 10 * 1024 * 1024; // 10 MB
+    const MAX_SIZE = 20 * 1024 * 1024; // 20 MB
 
     if (!allowedTypes.includes(selectedFile.type)) {
       toast.error("Only PDF files are allowed.");
@@ -97,7 +97,7 @@ export function UploadDialog({ open, onOpenChange, sessionId, caseId }: UploadDi
     }
 
     if (selectedFile.size > MAX_SIZE) {
-      toast.error("File size must be less than 10 MB.");
+      toast.error("File size must be less than 20 MB.");
       return;
     }
     
@@ -298,7 +298,7 @@ export function UploadDialog({ open, onOpenChange, sessionId, caseId }: UploadDi
                     </p>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Only PDF files (max 10 MB) are supported
+                    Only PDF files (max 20 MB) are supported
                   </p>
                 </div>
               )}
