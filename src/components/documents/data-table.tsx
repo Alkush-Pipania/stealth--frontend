@@ -28,9 +28,10 @@ interface DataTableProps {
   isLoading?: boolean;
   onRefresh?: () => void;
   sessionId?: string;
+  caseId?: string; // Optional: If provided, upload dialog will use this case
 }
 
-export function DataTable({ data, isLoading = false, onRefresh, sessionId }: DataTableProps) {
+export function DataTable({ data, isLoading = false, onRefresh, sessionId, caseId }: DataTableProps) {
   const [searchTerm, setSearchTerm] = React.useState("");
   const [uploadDialogOpen, setUploadDialogOpen] = React.useState(false);
 
@@ -149,6 +150,7 @@ export function DataTable({ data, isLoading = false, onRefresh, sessionId }: Dat
         open={uploadDialogOpen}
         onOpenChange={setUploadDialogOpen}
         sessionId={sessionId}
+        caseId={caseId}
       />
     </div>
   );

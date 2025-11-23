@@ -25,9 +25,10 @@ interface UploadDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   sessionId?: string;
+  caseId?: string; // Optional: If provided, skip case selection
 }
 
-export function UploadDialog({ open, onOpenChange, sessionId }: UploadDialogProps) {
+export function UploadDialog({ open, onOpenChange, sessionId, caseId }: UploadDialogProps) {
   const [name, setName] = React.useState("");
   const [file, setFile] = React.useState<File | null>(null);
   const [isUploading, setIsUploading] = React.useState(false);
@@ -38,12 +39,19 @@ export function UploadDialog({ open, onOpenChange, sessionId }: UploadDialogProp
 
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
-  // Fetch cases when dialog opens
+  // Set selectedCase to caseId if provided
   React.useEffect(() => {
-    if (open) {
+    if (caseId) {
+      setSelectedCase(caseId);
+    }
+  }, [caseId]);
+
+  // Fetch cases when dialog opens (only if caseId not provided)
+  React.useEffect(() => {
+    if (open && !caseId) {
       fetchCases();
     }
-  }, [open]);
+  }, [open, caseId]);
 
   const fetchCases = async () => {
     setLoadingCases(true);
@@ -303,22 +311,24 @@ export function UploadDialog({ open, onOpenChange, sessionId }: UploadDialogProp
             </div>
           </div>
 
-          {/* Case Selection */}
-          <div className="space-y-2">
-            <Label htmlFor="case">Case *</Label>
-            <Select value={selectedCase} onValueChange={setSelectedCase}>
-              <SelectTrigger id="case">
-                <SelectValue placeholder={loadingCases ? "Loading cases..." : "Select a case"} />
-              </SelectTrigger>
-              <SelectContent>
-                {cases.map((caseItem) => (
-                  <SelectItem key={caseItem.id} value={caseItem.id}>
-                    {caseItem.title}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {/* Case Selection - Only show if caseId not provided */}
+          {!caseId && (
+            <div className="space-y-2">
+              <Label htmlFor="case">Case *</Label>
+              <Select value={selectedCase} onValueChange={setSelectedCase}>
+                <SelectTrigger id="case">
+                  <SelectValue placeholder={loadingCases ? "Loading cases..." : "Select a case"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {cases.map((caseItem) => (
+                    <SelectItem key={caseItem.id} value={caseItem.id}>
+                      {caseItem.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           {/* Name Field */}
           <div className="space-y-2">
