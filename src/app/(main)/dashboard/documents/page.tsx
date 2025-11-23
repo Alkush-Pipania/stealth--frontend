@@ -21,25 +21,25 @@ export default function DocumentsPage() {
   }, []);
 
   return (
-    <div className="container mx-auto py-8">
+    <div className="container mx-auto py-8 bg-background dark:bg-background">
       <div className="flex flex-col space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Documents</h1>
-            <p className="text-muted-foreground">
+            <h1 className="text-3xl font-bold tracking-tight text-foreground dark:text-foreground">Documents</h1>
+            <p className="text-muted-foreground dark:text-muted-foreground">
               Manage and organize your uploaded documents
             </p>
           </div>
         </div>
 
         {error && (
-          <div className="rounded-md bg-destructive/15 p-4">
+          <div className="rounded-md bg-destructive/15 dark:bg-destructive/20 p-4">
             <div className="flex">
               <div className="ml-3">
-                <h3 className="text-sm font-medium text-destructive">
+                <h3 className="text-sm font-medium text-destructive dark:text-destructive">
                   Error loading documents
                 </h3>
-                <div className="mt-2 text-sm text-destructive">
+                <div className="mt-2 text-sm text-destructive dark:text-destructive">
                   {error}
                 </div>
               </div>

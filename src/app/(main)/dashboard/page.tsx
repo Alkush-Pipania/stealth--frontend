@@ -13,13 +13,13 @@ export default function DashboardPage() {
   useProtectedRoute();
 
   return (
-    <div className="flex flex-col space-y-6 md:space-y-8 p-4 md:p-8">
+    <div className="flex flex-col space-y-6 md:space-y-8 p-4 md:p-8 bg-background dark:bg-background">
       {/* Cases Section */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-2xl font-semibold tracking-tight">Cases</h2>
-            <p className="text-sm text-muted-foreground">
+            <h2 className="text-2xl font-semibold tracking-tight text-foreground dark:text-foreground">Cases</h2>
+            <p className="text-sm text-muted-foreground dark:text-muted-foreground">
               View and manage your legal cases
             </p>
           </div>
@@ -27,7 +27,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Cases Table */}
-        <div className="rounded-lg border bg-card md:border">
+        <div className="rounded-lg border bg-card dark:bg-card dark:border-border md:border">
           <CasesTable />
         </div>
       </div>
