@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Upload, X, FileText, Loader2 } from "lucide-react";
+import { Upload, X, FileText } from "lucide-react";
 import { toast } from "sonner";
 import axios from "axios";
 import { apiGet, apiPost } from "@/action/server";
@@ -38,7 +38,6 @@ let persistedFile: File | null = null;
 export function UploadDialog({ open, onOpenChange, sessionId, caseId }: UploadDialogProps) {
   const [name, setName] = React.useState("");
   const [file, setFile] = React.useState<File | null>(null);
-  const [isUploading, setIsUploading] = React.useState(false);
   const [dragActive, setDragActive] = React.useState(false);
   const [selectedCase, setSelectedCase] = React.useState<string>("");
   const [cases, setCases] = React.useState<Case[]>([]);
@@ -132,9 +131,7 @@ export function UploadDialog({ open, onOpenChange, sessionId, caseId }: UploadDi
   };
 
   const handleClose = () => {
-    if (!isUploading) {
-      onOpenChange(false);
-    }
+    onOpenChange(false);
   };
 
   const handleFileSelect = (selectedFile: File) => {
@@ -196,9 +193,12 @@ export function UploadDialog({ open, onOpenChange, sessionId, caseId }: UploadDi
       return;
     }
 
-    setIsUploading(true);
+    // Close dialog immediately
+    clearPersistedData();
+    onOpenChange(false);
 
-    try {
+    // Perform upload with loading toast
+    const uploadPromise = (async () => {
       const presignResponse = await apiPost<{
         document_id: string;
         upload_url: string;
@@ -213,9 +213,7 @@ export function UploadDialog({ open, onOpenChange, sessionId, caseId }: UploadDi
       });
 
       if (!presignResponse.success || !presignResponse.data?.upload_url) {
-        toast.error("Failed to get upload URL");
-        setIsUploading(false);
-        return;
+        throw new Error("Failed to get upload URL");
       }
 
       const { upload_url, document_id } = presignResponse.data;
@@ -226,27 +224,33 @@ export function UploadDialog({ open, onOpenChange, sessionId, caseId }: UploadDi
       });
 
       if (uploadResponse.status !== 200) {
-        toast.error("Failed to upload file to storage");
-        setIsUploading(false);
-        return;
+        throw new Error("Failed to upload file to storage");
       }
 
-      toast.success("Document uploaded successfully!");
-      clearPersistedData();
-      onOpenChange(false);
-    } catch (error: any) {
-      console.error("Upload error:", error);
+      // Call complete endpoint to trigger ingestion
+      const completeResponse = await apiPost(
+        API_ENDPOINTS.COMPLETE_UPLOAD(selectedCase, document_id),
+        {
+          includeAuth: true,
+        }
+      );
 
-      if (error.message?.includes("CORS") || error.message?.includes("Failed to fetch")) {
-        toast.error("CORS error: Check DigitalOcean Spaces CORS configuration");
-      } else if (axios.isAxiosError(error)) {
-        toast.error(`Upload failed: ${error.response?.status || "Network error"}`);
-      } else {
-        toast.error("Failed to upload document");
+      if (!completeResponse.success) {
+        console.error("Complete endpoint failed:", completeResponse);
+        throw new Error("Upload succeeded but failed to start processing");
       }
-    } finally {
-      setIsUploading(false);
-    }
+
+      return { success: true };
+    })();
+
+    toast.promise(uploadPromise, {
+      loading: "Uploading document...",
+      success: "Document uploaded successfully!",
+      error: (err) => {
+        console.error("Upload error:", err);
+        return err.message || "Failed to upload document";
+      },
+    });
   };
 
   const formatFileSize = (bytes: number): string => {
@@ -281,8 +285,7 @@ export function UploadDialog({ open, onOpenChange, sessionId, caseId }: UploadDi
           </div>
           <button
             onClick={handleClose}
-            disabled={isUploading}
-            className="h-8 w-8 rounded-md hover:bg-accent hover:text-accent-foreground disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center"
+            className="h-8 w-8 rounded-md hover:bg-accent hover:text-accent-foreground inline-flex items-center justify-center"
             aria-label="Close"
           >
             <X className="h-4 w-4" />
@@ -394,27 +397,17 @@ export function UploadDialog({ open, onOpenChange, sessionId, caseId }: UploadDi
             <button
               type="button"
               onClick={handleClose}
-              disabled={isUploading}
-              className="px-4 py-2 text-sm border dark:border-border rounded-md hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent dark:hover:text-accent-foreground disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 text-sm border dark:border-border rounded-md hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent dark:hover:text-accent-foreground"
             >
               Cancel
             </button>
             <button
               type="submit"
-              disabled={!file || !name.trim() || !selectedCase || isUploading}
+              disabled={!file || !name.trim() || !selectedCase}
               className="px-4 py-2 text-sm bg-primary text-primary-foreground dark:bg-primary dark:text-primary-foreground rounded-md hover:bg-primary/90 dark:hover:bg-primary/80 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center"
             >
-              {isUploading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Uploading...
-                </>
-              ) : (
-                <>
-                  <Upload className="mr-2 h-4 w-4" />
-                  Upload Document
-                </>
-              )}
+              <Upload className="mr-2 h-4 w-4" />
+              Upload Document
             </button>
           </div>
         </form>
