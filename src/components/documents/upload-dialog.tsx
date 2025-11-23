@@ -40,12 +40,12 @@ export function UploadDialog({ open, onOpenChange, sessionId, caseId, onUploadSu
 
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
-  // Set selectedCase to caseId if provided
+  // Set selectedCase to caseId if provided (run when dialog opens or caseId changes)
   React.useEffect(() => {
-    if (caseId) {
+    if (caseId && open) {
       setSelectedCase(caseId);
     }
-  }, [caseId]);
+  }, [caseId, open]);
 
   // Fetch cases when dialog opens (only if caseId not provided)
   React.useEffect(() => {
