@@ -231,7 +231,22 @@ export function UploadDialog({ open, onOpenChange, sessionId, caseId }: UploadDi
         return;
       }
 
-      toast.success("Document uploaded successfully!");
+      // Call complete endpoint to trigger ingestion
+      const completeResponse = await apiPost(
+        API_ENDPOINTS.COMPLETE_UPLOAD(selectedCase, document_id),
+        {
+          includeAuth: true,
+        }
+      );
+
+      if (!completeResponse.success) {
+        toast.error("Upload succeeded but failed to start processing");
+        console.error("Complete endpoint failed:", completeResponse);
+        // Still close the dialog since upload was successful
+      } else {
+        toast.success("Document uploaded successfully!");
+      }
+
       clearPersistedData();
       onOpenChange(false);
     } catch (error: any) {

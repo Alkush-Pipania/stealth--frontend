@@ -18,6 +18,7 @@ export const API_ENDPOINTS = {
   GET_CASE_DOCUMENTS: (caseId: string) => `${BACKEND_URL}/api/${caseId}/documents`,
   PRESIGN_UPLOAD: (caseId: string) => `${BACKEND_URL}/api/${caseId}/documents/presign`,
   UPLOAD_DOCUMENT: (caseId: string) => `${BACKEND_URL}/api/cases/${caseId}/documents`,
+  COMPLETE_UPLOAD: (caseId: string, docId: string) => `${BACKEND_URL}/api/${caseId}/documents/${docId}/complete`,
   GET_DOCUMENT_BY_ID: (caseId: string, documentId: string) => `${BACKEND_URL}/api/${caseId}/documents/${documentId}`,
   DELETE_DOCUMENT: (caseId: string, documentId: string) => `${BACKEND_URL}/api/cases/${caseId}/documents/${documentId}`,
 } as const;
