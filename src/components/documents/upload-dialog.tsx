@@ -4,16 +4,6 @@ import * as React from "react";
 import { Upload, X, FileText, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import axios from "axios";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { apiGet, apiPost } from "@/action/server";
 import { API_ENDPOINTS } from "@/action/endpoint";
 
@@ -26,8 +16,24 @@ interface UploadDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   sessionId?: string;
-  caseId?: string; // Optional: If provided, skip case selection
+  caseId?: string;
 }
+
+interface PersistedFileData {
+  name: string;
+  selectedCase: string;
+  fileData: {
+    name: string;
+    size: number;
+    type: string;
+    lastModified: number;
+  } | null;
+}
+
+const STORAGE_KEY = "upload_dialog_state";
+
+// Store file in module scope for persistence across renders
+let persistedFile: File | null = null;
 
 export function UploadDialog({ open, onOpenChange, sessionId, caseId }: UploadDialogProps) {
   const [name, setName] = React.useState("");
@@ -39,6 +45,27 @@ export function UploadDialog({ open, onOpenChange, sessionId, caseId }: UploadDi
   const [loadingCases, setLoadingCases] = React.useState(false);
 
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  // Load persisted state when dialog opens
+  React.useEffect(() => {
+    if (open) {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        try {
+          const data: PersistedFileData = JSON.parse(stored);
+          setName(data.name);
+          if (!caseId) {
+            setSelectedCase(data.selectedCase);
+          }
+          if (persistedFile) {
+            setFile(persistedFile);
+          }
+        } catch (e) {
+          console.error("Failed to load persisted data:", e);
+        }
+      }
+    }
+  }, [open, caseId]);
 
   // Set selectedCase to caseId if provided
   React.useEffect(() => {
@@ -53,6 +80,26 @@ export function UploadDialog({ open, onOpenChange, sessionId, caseId }: UploadDi
       fetchCases();
     }
   }, [open, caseId]);
+
+  // Persist state when it changes
+  React.useEffect(() => {
+    if (file || name || selectedCase) {
+      const data: PersistedFileData = {
+        name,
+        selectedCase: caseId || selectedCase,
+        fileData: file
+          ? {
+              name: file.name,
+              size: file.size,
+              type: file.type,
+              lastModified: file.lastModified,
+            }
+          : null,
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      persistedFile = file;
+    }
+  }, [file, name, selectedCase, caseId]);
 
   const fetchCases = async () => {
     setLoadingCases(true);
@@ -74,21 +121,23 @@ export function UploadDialog({ open, onOpenChange, sessionId, caseId }: UploadDi
     }
   };
 
-  const resetForm = () => {
+  const clearPersistedData = () => {
+    localStorage.removeItem(STORAGE_KEY);
+    persistedFile = null;
     setName("");
     setFile(null);
-    setSelectedCase("");
+    if (!caseId) {
+      setSelectedCase("");
+    }
   };
 
   const handleClose = () => {
     if (!isUploading) {
-      resetForm();
       onOpenChange(false);
     }
   };
 
   const handleFileSelect = (selectedFile: File) => {
-    // Validate file type - backend only allows PDF
     const allowedTypes = ['application/pdf'];
     const MAX_SIZE = 20 * 1024 * 1024; // 20 MB
 
@@ -101,10 +150,9 @@ export function UploadDialog({ open, onOpenChange, sessionId, caseId }: UploadDi
       toast.error("File size must be less than 20 MB.");
       return;
     }
-    
+
     setFile(selectedFile);
     if (!name && selectedFile.name) {
-      // Auto-populate name with filename (without extension)
       const nameWithoutExtension = selectedFile.name.replace(/\.[^/.]+$/, "");
       setName(nameWithoutExtension);
     }
@@ -151,8 +199,6 @@ export function UploadDialog({ open, onOpenChange, sessionId, caseId }: UploadDi
     setIsUploading(true);
 
     try {
-      // Step 1: Get presigned URL from backend
-      // Backend will extract userId from JWT token
       const presignResponse = await apiPost<{
         document_id: string;
         upload_url: string;
@@ -175,11 +221,7 @@ export function UploadDialog({ open, onOpenChange, sessionId, caseId }: UploadDi
       const { upload_url, document_id } = presignResponse.data;
 
       const uploadResponse = await axios.put(upload_url, file, {
-        headers: {
-          // Let browser set Content-Type automatically
-          // DO NOT set custom headers - it triggers CORS preflight
-        },
-        // Don't transform the request body
+        headers: {},
         transformRequest: [(data) => data],
       });
 
@@ -189,14 +231,12 @@ export function UploadDialog({ open, onOpenChange, sessionId, caseId }: UploadDi
         return;
       }
 
-      // Success!
       toast.success("Document uploaded successfully!");
+      clearPersistedData();
       onOpenChange(false);
-      resetForm();
     } catch (error: any) {
       console.error("Upload error:", error);
-      
-      // More specific error messages
+
       if (error.message?.includes("CORS") || error.message?.includes("Failed to fetch")) {
         toast.error("CORS error: Check DigitalOcean Spaces CORS configuration");
       } else if (axios.isAxiosError(error)) {
@@ -213,12 +253,12 @@ export function UploadDialog({ open, onOpenChange, sessionId, caseId }: UploadDi
     const units = ["B", "KB", "MB", "GB"];
     let size = bytes;
     let unitIndex = 0;
-    
+
     while (size >= 1024 && unitIndex < units.length - 1) {
       size /= 1024;
       unitIndex++;
     }
-    
+
     return `${size.toFixed(1)} ${units[unitIndex]}`;
   };
 
@@ -226,15 +266,12 @@ export function UploadDialog({ open, onOpenChange, sessionId, caseId }: UploadDi
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Backdrop */}
-      <div 
-        className="absolute inset-0 bg-black/50" 
+      <div
+        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
         onClick={handleClose}
       />
-      
-      {/* Dialog */}
-      <div className="relative bg-background border rounded-lg shadow-lg w-full max-w-md mx-4 max-h-[90vh] overflow-hidden">
-        {/* Header */}
+
+      <div className="relative bg-background border rounded-lg shadow-lg w-full max-w-md mx-4 max-h-[90vh] overflow-hidden animate-in fade-in-0 zoom-in-95">
         <div className="flex items-center justify-between p-6 border-b">
           <div>
             <h2 className="text-lg font-semibold">Upload Document</h2>
@@ -242,26 +279,24 @@ export function UploadDialog({ open, onOpenChange, sessionId, caseId }: UploadDi
               Add a new document to your collection
             </p>
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
+          <button
             onClick={handleClose}
             disabled={isUploading}
+            className="h-8 w-8 rounded-md hover:bg-accent hover:text-accent-foreground disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center"
+            aria-label="Close"
           >
             <X className="h-4 w-4" />
-          </Button>
+          </button>
         </div>
 
-        {/* Content */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          {/* File Upload Area */}
           <div className="space-y-2">
-            <Label>File</Label>
+            <label className="text-sm font-medium leading-none">File</label>
             <div
               className={`
-                border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors
-                ${dragActive ? "border-primary bg-primary/5" : "border-muted-foreground/25"}
-                ${file ? "border-primary bg-primary/5" : "hover:border-muted-foreground/50"}
+                border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-all
+                ${dragActive ? "border-primary bg-primary/5 scale-[0.98]" : "border-muted-foreground/25"}
+                ${file ? "border-primary bg-primary/5" : "hover:border-muted-foreground/50 hover:bg-accent/5"}
               `}
               onDrop={handleDrop}
               onDragOver={handleDragOver}
@@ -275,7 +310,7 @@ export function UploadDialog({ open, onOpenChange, sessionId, caseId }: UploadDi
                 onChange={handleFileInputChange}
                 accept=".pdf"
               />
-              
+
               {file ? (
                 <div className="space-y-2">
                   <FileText className="h-8 w-8 mx-auto text-primary" />
@@ -285,18 +320,17 @@ export function UploadDialog({ open, onOpenChange, sessionId, caseId }: UploadDi
                       {formatFileSize(file.size)}
                     </p>
                   </div>
-                  <Button
+                  <button
                     type="button"
-                    variant="outline"
-                    size="sm"
                     onClick={(e) => {
                       e.stopPropagation();
                       setFile(null);
                       setName("");
                     }}
+                    className="mt-2 px-3 py-1.5 text-sm border rounded-md hover:bg-accent hover:text-accent-foreground"
                   >
                     Remove
-                  </Button>
+                  </button>
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -315,50 +349,60 @@ export function UploadDialog({ open, onOpenChange, sessionId, caseId }: UploadDi
             </div>
           </div>
 
-          {/* Case Selection - Only show if caseId not provided */}
           {!caseId && (
             <div className="space-y-2">
-              <Label htmlFor="case">Case *</Label>
-              <Select value={selectedCase} onValueChange={setSelectedCase}>
-                <SelectTrigger id="case">
-                  <SelectValue placeholder={loadingCases ? "Loading cases..." : "Select a case"} />
-                </SelectTrigger>
-                <SelectContent>
+              <label htmlFor="case" className="text-sm font-medium leading-none">
+                Case <span className="text-destructive">*</span>
+              </label>
+              <div className="relative">
+                <select
+                  id="case"
+                  value={selectedCase}
+                  onChange={(e) => setSelectedCase(e.target.value)}
+                  disabled={loadingCases}
+                  className="w-full px-3 py-2 border rounded-md bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <option value="">
+                    {loadingCases ? "Loading cases..." : "Select a case"}
+                  </option>
                   {cases.map((caseItem) => (
-                    <SelectItem key={caseItem.id} value={caseItem.id}>
+                    <option key={caseItem.id} value={caseItem.id}>
                       {caseItem.title}
-                    </SelectItem>
+                    </option>
                   ))}
-                </SelectContent>
-              </Select>
+                </select>
+              </div>
             </div>
           )}
 
-          {/* Name Field */}
           <div className="space-y-2">
-            <Label htmlFor="name">Name *</Label>
-            <Input
+            <label htmlFor="name" className="text-sm font-medium leading-none">
+              Name <span className="text-destructive">*</span>
+            </label>
+            <input
               id="name"
+              type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Enter document name"
               required
+              className="w-full px-3 py-2 border rounded-md bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
             />
           </div>
 
-          {/* Footer */}
           <div className="flex justify-end space-x-2 pt-4">
-            <Button
+            <button
               type="button"
-              variant="outline"
               onClick={handleClose}
               disabled={isUploading}
+              className="px-4 py-2 text-sm border rounded-md hover:bg-accent hover:text-accent-foreground disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Cancel
-            </Button>
-            <Button
+            </button>
+            <button
               type="submit"
               disabled={!file || !name.trim() || !selectedCase || isUploading}
+              className="px-4 py-2 text-sm bg-primary text-primary-foreground rounded-md hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center"
             >
               {isUploading ? (
                 <>
@@ -371,7 +415,7 @@ export function UploadDialog({ open, onOpenChange, sessionId, caseId }: UploadDi
                   Upload Document
                 </>
               )}
-            </Button>
+            </button>
           </div>
         </form>
       </div>
