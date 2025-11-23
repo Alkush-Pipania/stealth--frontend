@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
+import { useRouter } from "next/navigation";
 import { RootState, AppDispatch } from "@/store";
 import { fetchCases } from "@/store/thunk/casesthunk";
 import {
@@ -17,7 +18,6 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatDate } from "@/lib/utils";
 import { FileText } from "lucide-react";
-import Link from "next/link";
 
 // Status badge component
 function CaseStatus({ status }: { status: string }) {
@@ -45,11 +45,17 @@ function CaseStatus({ status }: { status: string }) {
 
 export function CasesTable() {
   const dispatch = useDispatch<AppDispatch>();
+  const router = useRouter();
   const { cases, loading, error } = useSelector((state: RootState) => state.cases);
 
   useEffect(() => {
     dispatch(fetchCases());
   }, [dispatch]);
+
+  // Handler: Navigate to case page when row is clicked
+  const handleCaseClick = (caseId: string) => {
+    router.push(`/case/${caseId}`);
+  };
 
   if (loading) {
     return (
@@ -132,37 +138,35 @@ export function CasesTable() {
             cases.map((caseItem) => (
               <TableRow
                 key={caseItem.id}
+                onClick={() => handleCaseClick(caseItem.id)}
                 className="group hover:bg-muted/30 transition-colors cursor-pointer border-b"
-                asChild
               >
-                <Link href={`/case/${caseItem.id}`}>
-                  <TableCell className="py-4 px-4">
-                    <div className="flex flex-col gap-1">
-                      <span className="font-medium text-base">{caseItem.title}</span>
-                      <span className="text-xs text-muted-foreground/70 font-mono">
-                        ID: {caseItem.id.slice(0, 8)}...
-                      </span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="py-4 px-4">
-                    <div className="max-w-[400px] line-clamp-2 text-sm text-muted-foreground" title={caseItem.description || undefined}>
-                      {caseItem.description || <span className="italic">No description</span>}
-                    </div>
-                  </TableCell>
-                  <TableCell className="py-4 px-4">
-                    <span className="text-sm">
-                      {caseItem.jurisdiction || <span className="text-muted-foreground italic">N/A</span>}
+                <TableCell className="py-4 px-4">
+                  <div className="flex flex-col gap-1">
+                    <span className="font-medium text-base">{caseItem.title}</span>
+                    <span className="text-xs text-muted-foreground/70 font-mono">
+                      ID: {caseItem.id.slice(0, 8)}...
                     </span>
-                  </TableCell>
-                  <TableCell className="py-4 px-4">
-                    <CaseStatus status={caseItem.status} />
-                  </TableCell>
-                  <TableCell className="py-4 px-4">
-                    <span className="text-sm text-muted-foreground">
-                      {formatDate(caseItem.createdAt)}
-                    </span>
-                  </TableCell>
-                </Link>
+                  </div>
+                </TableCell>
+                <TableCell className="py-4 px-4">
+                  <div className="max-w-[400px] line-clamp-2 text-sm text-muted-foreground" title={caseItem.description || undefined}>
+                    {caseItem.description || <span className="italic">No description</span>}
+                  </div>
+                </TableCell>
+                <TableCell className="py-4 px-4">
+                  <span className="text-sm">
+                    {caseItem.jurisdiction || <span className="text-muted-foreground italic">N/A</span>}
+                  </span>
+                </TableCell>
+                <TableCell className="py-4 px-4">
+                  <CaseStatus status={caseItem.status} />
+                </TableCell>
+                <TableCell className="py-4 px-4">
+                  <span className="text-sm text-muted-foreground">
+                    {formatDate(caseItem.createdAt)}
+                  </span>
+                </TableCell>
               </TableRow>
             ))
           )}
