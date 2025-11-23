@@ -53,33 +53,36 @@ export function CasesTable() {
 
   if (loading) {
     return (
-      <div className="rounded-md border">
+      <div className="w-full">
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead className="w-[250px]">Title</TableHead>
-              <TableHead>Description</TableHead>
-              <TableHead className="w-[150px]">Jurisdiction</TableHead>
-              <TableHead className="w-[100px]">Status</TableHead>
-              <TableHead className="w-[140px]">Created</TableHead>
+            <TableRow className="hover:bg-transparent border-b">
+              <TableHead className="h-12 px-4 font-semibold">Title</TableHead>
+              <TableHead className="h-12 px-4 font-semibold">Description</TableHead>
+              <TableHead className="h-12 px-4 font-semibold w-[180px]">Jurisdiction</TableHead>
+              <TableHead className="h-12 px-4 font-semibold w-[120px]">Status</TableHead>
+              <TableHead className="h-12 px-4 font-semibold w-[140px]">Created</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {Array.from({ length: 5 }).map((_, index) => (
-              <TableRow key={index}>
-                <TableCell>
-                  <Skeleton className="h-4 w-[200px]" />
+              <TableRow key={index} className="border-b">
+                <TableCell className="py-4 px-4">
+                  <div className="flex flex-col gap-2">
+                    <Skeleton className="h-5 w-[200px]" />
+                    <Skeleton className="h-3 w-[100px]" />
+                  </div>
                 </TableCell>
-                <TableCell>
-                  <Skeleton className="h-4 w-[250px]" />
+                <TableCell className="py-4 px-4">
+                  <Skeleton className="h-4 w-[300px]" />
                 </TableCell>
-                <TableCell>
+                <TableCell className="py-4 px-4">
                   <Skeleton className="h-4 w-[120px]" />
                 </TableCell>
-                <TableCell>
-                  <Skeleton className="h-4 w-[80px]" />
+                <TableCell className="py-4 px-4">
+                  <Skeleton className="h-5 w-[70px]" />
                 </TableCell>
-                <TableCell>
+                <TableCell className="py-4 px-4">
                   <Skeleton className="h-4 w-[100px]" />
                 </TableCell>
               </TableRow>
@@ -99,63 +102,65 @@ export function CasesTable() {
   }
 
   return (
-    <div className="rounded-md border">
+    <div className="w-full">
       <Table>
-        <TableCaption className="text-left p-4 text-muted-foreground">
-          {cases.length === 0
-            ? "No cases found. Create your first case to get started."
-            : `Showing ${cases.length} case${cases.length !== 1 ? 's' : ''}`
-          }
-        </TableCaption>
         <TableHeader>
-          <TableRow>
-            <TableHead className="w-[250px]">Title</TableHead>
-            <TableHead>Description</TableHead>
-            <TableHead className="w-[150px]">Jurisdiction</TableHead>
-            <TableHead className="w-[100px]">Status</TableHead>
-            <TableHead className="w-[140px]">Created</TableHead>
+          <TableRow className="hover:bg-transparent border-b">
+            <TableHead className="h-12 px-4 font-semibold">Title</TableHead>
+            <TableHead className="h-12 px-4 font-semibold">Description</TableHead>
+            <TableHead className="h-12 px-4 font-semibold w-[180px]">Jurisdiction</TableHead>
+            <TableHead className="h-12 px-4 font-semibold w-[120px]">Status</TableHead>
+            <TableHead className="h-12 px-4 font-semibold w-[140px]">Created</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {cases.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={5} className="h-32 text-center">
-                <div className="flex flex-col items-center justify-center space-y-2">
-                  <FileText className="h-8 w-8 text-muted-foreground" />
-                  <div className="text-muted-foreground">No cases available</div>
-                  <div className="text-sm text-muted-foreground">
-                    Create your first case to get started
+              <TableCell colSpan={5} className="h-48 text-center">
+                <div className="flex flex-col items-center justify-center space-y-3">
+                  <FileText className="h-12 w-12 text-muted-foreground/50" />
+                  <div>
+                    <div className="text-base font-medium text-muted-foreground">No cases available</div>
+                    <div className="text-sm text-muted-foreground/70 mt-1">
+                      Create your first case to get started
+                    </div>
                   </div>
                 </div>
               </TableCell>
             </TableRow>
           ) : (
             cases.map((caseItem) => (
-              <TableRow key={caseItem.id} className="group hover:bg-muted/50 transition-colors cursor-pointer" asChild>
+              <TableRow
+                key={caseItem.id}
+                className="group hover:bg-muted/30 transition-colors cursor-pointer border-b"
+                asChild
+              >
                 <Link href={`/case/${caseItem.id}`}>
-                  <TableCell className="font-medium">
-                    <div className="flex flex-col">
-                      <span className="font-semibold">{caseItem.title}</span>
-                      <span className="text-xs text-muted-foreground font-mono">
-                        {caseItem.id.slice(0, 8)}...
+                  <TableCell className="py-4 px-4">
+                    <div className="flex flex-col gap-1">
+                      <span className="font-medium text-base">{caseItem.title}</span>
+                      <span className="text-xs text-muted-foreground/70 font-mono">
+                        ID: {caseItem.id.slice(0, 8)}...
                       </span>
                     </div>
                   </TableCell>
-                  <TableCell>
-                    <div className="max-w-[300px] truncate" title={caseItem.description || undefined}>
-                      {caseItem.description || <span className="text-muted-foreground italic">No description</span>}
+                  <TableCell className="py-4 px-4">
+                    <div className="max-w-[400px] line-clamp-2 text-sm text-muted-foreground" title={caseItem.description || undefined}>
+                      {caseItem.description || <span className="italic">No description</span>}
                     </div>
                   </TableCell>
-                  <TableCell>
-                    {caseItem.jurisdiction || <span className="text-muted-foreground italic">N/A</span>}
+                  <TableCell className="py-4 px-4">
+                    <span className="text-sm">
+                      {caseItem.jurisdiction || <span className="text-muted-foreground italic">N/A</span>}
+                    </span>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="py-4 px-4">
                     <CaseStatus status={caseItem.status} />
                   </TableCell>
-                  <TableCell>
-                    <div className="text-sm">
+                  <TableCell className="py-4 px-4">
+                    <span className="text-sm text-muted-foreground">
                       {formatDate(caseItem.createdAt)}
-                    </div>
+                    </span>
                   </TableCell>
                 </Link>
               </TableRow>
@@ -163,6 +168,11 @@ export function CasesTable() {
           )}
         </TableBody>
       </Table>
+      {cases.length > 0 && (
+        <div className="px-4 py-3 text-xs text-muted-foreground border-t bg-muted/20">
+          Showing {cases.length} case{cases.length !== 1 ? 's' : ''}
+        </div>
+      )}
     </div>
   );
 }

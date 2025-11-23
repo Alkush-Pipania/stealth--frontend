@@ -6,8 +6,7 @@ import { usePathname } from "next/navigation"
 import {
   ChevronDown,
   Briefcase,
-  Settings,
-  Files
+  Settings
 } from "lucide-react"
 
 import {
@@ -34,11 +33,6 @@ const menuItems = [
     title: "Cases",
     url: "/dashboard",
     icon: Briefcase
-  },
-  {
-    title: "Documents",
-    url: "/dashboard/documents",
-    icon: Files
   },
   {
     title: "Settings",
