@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/table";
 import {
   DocumentNameCell,
-  FileSizeCell,
+  PagesCell,
   UploadDateCell,
   StatusCell,
   ActionsCell,
@@ -84,8 +84,8 @@ export function DataTable({ data, isLoading = false, onRefresh, sessionId, caseI
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Name</TableHead>
-              <TableHead>Size</TableHead>
+              <TableHead>Filename</TableHead>
+              <TableHead>Pages</TableHead>
               <TableHead>Uploaded</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="text-right">Actions</TableHead>
@@ -108,13 +108,13 @@ export function DataTable({ data, isLoading = false, onRefresh, sessionId, caseI
                     <DocumentNameCell document={document} />
                   </TableCell>
                   <TableCell>
-                    <FileSizeCell fileSize={document.fileSize} />
+                    <PagesCell pages={document.pages} />
                   </TableCell>
                   <TableCell>
-                    <UploadDateCell createdAt={document.createdAt} />
+                    <UploadDateCell uploadedAt={document.uploadedAt} />
                   </TableCell>
                   <TableCell>
-                    <StatusCell embedStatus={document.embedStatus} />
+                    <StatusCell status={document.status} />
                   </TableCell>
                   <TableCell className="text-right">
                     <ActionsCell document={document} />
