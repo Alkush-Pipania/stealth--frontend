@@ -267,15 +267,15 @@ export function UploadDialog({ open, onOpenChange, sessionId, caseId }: UploadDi
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/50 dark:bg-black/70 backdrop-blur-sm"
         onClick={handleClose}
       />
 
-      <div className="relative bg-background border rounded-lg shadow-lg w-full max-w-md mx-4 max-h-[90vh] overflow-hidden animate-in fade-in-0 zoom-in-95">
-        <div className="flex items-center justify-between p-6 border-b">
+      <div className="relative bg-background dark:bg-card border dark:border-border rounded-lg shadow-lg w-full max-w-md mx-4 max-h-[90vh] overflow-hidden animate-in fade-in-0 zoom-in-95">
+        <div className="flex items-center justify-between p-6 border-b dark:border-border">
           <div>
-            <h2 className="text-lg font-semibold">Upload Document</h2>
-            <p className="text-sm text-muted-foreground">
+            <h2 className="text-lg font-semibold text-foreground dark:text-foreground">Upload Document</h2>
+            <p className="text-sm text-muted-foreground dark:text-muted-foreground">
               Add a new document to your collection
             </p>
           </div>
@@ -291,12 +291,12 @@ export function UploadDialog({ open, onOpenChange, sessionId, caseId }: UploadDi
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium leading-none">File</label>
+            <label className="text-sm font-medium leading-none text-foreground dark:text-foreground">File</label>
             <div
               className={`
                 border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-all
-                ${dragActive ? "border-primary bg-primary/5 scale-[0.98]" : "border-muted-foreground/25"}
-                ${file ? "border-primary bg-primary/5" : "hover:border-muted-foreground/50 hover:bg-accent/5"}
+                ${dragActive ? "border-primary bg-primary/5 dark:bg-primary/10 scale-[0.98]" : "border-muted-foreground/25 dark:border-muted-foreground/20"}
+                ${file ? "border-primary bg-primary/5 dark:bg-primary/10" : "hover:border-muted-foreground/50 hover:bg-accent/5 dark:hover:bg-accent/10"}
               `}
               onDrop={handleDrop}
               onDragOver={handleDragOver}
@@ -313,10 +313,10 @@ export function UploadDialog({ open, onOpenChange, sessionId, caseId }: UploadDi
 
               {file ? (
                 <div className="space-y-2">
-                  <FileText className="h-8 w-8 mx-auto text-primary" />
+                  <FileText className="h-8 w-8 mx-auto text-primary dark:text-primary" />
                   <div className="space-y-1">
-                    <p className="font-medium">{file.name}</p>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="font-medium text-foreground dark:text-foreground">{file.name}</p>
+                    <p className="text-sm text-muted-foreground dark:text-muted-foreground">
                       {formatFileSize(file.size)}
                     </p>
                   </div>
@@ -327,21 +327,21 @@ export function UploadDialog({ open, onOpenChange, sessionId, caseId }: UploadDi
                       setFile(null);
                       setName("");
                     }}
-                    className="mt-2 px-3 py-1.5 text-sm border rounded-md hover:bg-accent hover:text-accent-foreground"
+                    className="mt-2 px-3 py-1.5 text-sm border dark:border-border rounded-md hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent dark:hover:text-accent-foreground"
                   >
                     Remove
                   </button>
                 </div>
               ) : (
                 <div className="space-y-2">
-                  <Upload className="h-8 w-8 mx-auto text-muted-foreground" />
+                  <Upload className="h-8 w-8 mx-auto text-muted-foreground dark:text-muted-foreground" />
                   <div className="space-y-1">
-                    <p className="font-medium">Drop your file here</p>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="font-medium text-foreground dark:text-foreground">Drop your file here</p>
+                    <p className="text-sm text-muted-foreground dark:text-muted-foreground">
                       or click to browse
                     </p>
                   </div>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-muted-foreground dark:text-muted-foreground">
                     Only PDF files (max 20 MB) are supported
                   </p>
                 </div>
@@ -351,8 +351,8 @@ export function UploadDialog({ open, onOpenChange, sessionId, caseId }: UploadDi
 
           {!caseId && (
             <div className="space-y-2">
-              <label htmlFor="case" className="text-sm font-medium leading-none">
-                Case <span className="text-destructive">*</span>
+              <label htmlFor="case" className="text-sm font-medium leading-none text-foreground dark:text-foreground">
+                Case <span className="text-destructive dark:text-destructive">*</span>
               </label>
               <div className="relative">
                 <select
@@ -360,7 +360,7 @@ export function UploadDialog({ open, onOpenChange, sessionId, caseId }: UploadDi
                   value={selectedCase}
                   onChange={(e) => setSelectedCase(e.target.value)}
                   disabled={loadingCases}
-                  className="w-full px-3 py-2 border rounded-md bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full px-3 py-2 border dark:border-border rounded-md bg-background dark:bg-card text-sm text-foreground dark:text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <option value="">
                     {loadingCases ? "Loading cases..." : "Select a case"}
@@ -376,8 +376,8 @@ export function UploadDialog({ open, onOpenChange, sessionId, caseId }: UploadDi
           )}
 
           <div className="space-y-2">
-            <label htmlFor="name" className="text-sm font-medium leading-none">
-              Name <span className="text-destructive">*</span>
+            <label htmlFor="name" className="text-sm font-medium leading-none text-foreground dark:text-foreground">
+              Name <span className="text-destructive dark:text-destructive">*</span>
             </label>
             <input
               id="name"
@@ -386,7 +386,7 @@ export function UploadDialog({ open, onOpenChange, sessionId, caseId }: UploadDi
               onChange={(e) => setName(e.target.value)}
               placeholder="Enter document name"
               required
-              className="w-full px-3 py-2 border rounded-md bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+              className="w-full px-3 py-2 border dark:border-border rounded-md bg-background dark:bg-card text-sm text-foreground dark:text-foreground placeholder:text-muted-foreground dark:placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
             />
           </div>
 
@@ -395,14 +395,14 @@ export function UploadDialog({ open, onOpenChange, sessionId, caseId }: UploadDi
               type="button"
               onClick={handleClose}
               disabled={isUploading}
-              className="px-4 py-2 text-sm border rounded-md hover:bg-accent hover:text-accent-foreground disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 text-sm border dark:border-border rounded-md hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent dark:hover:text-accent-foreground disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={!file || !name.trim() || !selectedCase || isUploading}
-              className="px-4 py-2 text-sm bg-primary text-primary-foreground rounded-md hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center"
+              className="px-4 py-2 text-sm bg-primary text-primary-foreground dark:bg-primary dark:text-primary-foreground rounded-md hover:bg-primary/90 dark:hover:bg-primary/80 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center"
             >
               {isUploading ? (
                 <>

@@ -6,7 +6,8 @@ import { usePathname } from "next/navigation"
 import {
   ChevronDown,
   Briefcase,
-  Settings
+  Settings,
+  User
 } from "lucide-react"
 
 import {
@@ -26,6 +27,7 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar"
 import Image from "next/image"
+import { ThemeToggle } from "@/components/theme-toggle"
 
 
 const menuItems = [
@@ -137,8 +139,31 @@ export function MainSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="border-t border-sidebar-border px-4 py-4">
-        <div className="text-xs text-sidebar-foreground/60 group-data-[collapsible=icon]:hidden">
-          © 2025 2alabs
+        <div className="space-y-2">
+          {/* Profile Section */}
+          <div className="flex items-center gap-3 px-3 py-2 rounded-md bg-sidebar-accent/50">
+            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+              <User className="h-4 w-4 text-primary" />
+            </div>
+            <div className="flex-1 min-w-0 group-data-[collapsible=icon]:hidden">
+              <p className="text-sm font-medium text-sidebar-foreground truncate">
+                Alkush Pipania
+              </p>
+              <p className="text-xs text-sidebar-foreground/60 truncate">
+                alkush@2alabs.com
+              </p>
+            </div>
+          </div>
+
+          {/* Theme Toggle */}
+          <div className="group-data-[collapsible=icon]:hidden">
+            <ThemeToggle />
+          </div>
+
+          {/* Copyright */}
+          <div className="text-xs text-sidebar-foreground/60 text-center pt-2 group-data-[collapsible=icon]:hidden">
+            © 2025 2alabs
+          </div>
         </div>
       </SidebarFooter>
       
