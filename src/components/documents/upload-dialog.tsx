@@ -87,15 +87,17 @@ export function UploadDialog({ open, onOpenChange, sessionId, caseId }: UploadDi
   };
 
   const handleFileSelect = (selectedFile: File) => {
-    // Validate file type
-    const allowedTypes = [
-      'application/pdf',
-      'application/vnd.ms-powerpoint',
-      'application/vnd.openxmlformats-officedocument.presentationml.presentation'
-    ];
-    
+    // Validate file type - backend only allows PDF
+    const allowedTypes = ['application/pdf'];
+    const MAX_SIZE = 20 * 1024 * 1024; // 20 MB
+
     if (!allowedTypes.includes(selectedFile.type)) {
-      toast.error("Only PDF and PowerPoint files are allowed.");
+      toast.error("Only PDF files are allowed.");
+      return;
+    }
+
+    if (selectedFile.size > MAX_SIZE) {
+      toast.error("File size must be less than 20 MB.");
       return;
     }
     
@@ -157,8 +159,8 @@ export function UploadDialog({ open, onOpenChange, sessionId, caseId }: UploadDi
       }>(API_ENDPOINTS.PRESIGN_UPLOAD(selectedCase), {
         body: {
           filename: file.name,
-          content_type: file.type,
-          size_bytes: file.size,
+          contentType: file.type,
+          fileSize: file.size,
         },
         includeAuth: true,
       });
@@ -261,7 +263,7 @@ export function UploadDialog({ open, onOpenChange, sessionId, caseId }: UploadDi
                 type="file"
                 className="hidden"
                 onChange={handleFileInputChange}
-                accept=".pdf,.ppt,.pptx"
+                accept=".pdf"
               />
               
               {file ? (
@@ -296,7 +298,7 @@ export function UploadDialog({ open, onOpenChange, sessionId, caseId }: UploadDi
                     </p>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Only PDF and PowerPoint files are supported
+                    Only PDF files (max 20 MB) are supported
                   </p>
                 </div>
               )}
