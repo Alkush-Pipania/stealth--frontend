@@ -25,9 +25,11 @@ export default function CasePage() {
   // State: Track if user is currently dragging the resize handle
   const [isResizing, setIsResizing] = React.useState(false)
 
-  // Constraints: Minimum and maximum width for right panel
-  const MIN_WIDTH = 250  // Minimum width: 250px
-  const MAX_WIDTH = 800  // Maximum width: 800px
+  // Constraints: Minimum and maximum width for panels
+  const MIN_RIGHT_WIDTH = 250    // Minimum width for right panel: 250px
+  const MIN_MIDDLE_WIDTH = 300   // Minimum width for middle section: 300px
+  // Max width = window width - min middle width - sidebar width (approximately 280px for left sidebar)
+  const SIDEBAR_WIDTH = 280      // Approximate left sidebar width
 
   // Handler: Start resizing when user clicks on the resize handle
   const startResizing = React.useCallback(() => {
@@ -46,8 +48,13 @@ export default function CasePage() {
         // Calculate new width based on mouse position from right edge
         const newWidth = window.innerWidth - e.clientX
 
-        // Apply constraints: keep width between MIN_WIDTH and MAX_WIDTH
-        if (newWidth >= MIN_WIDTH && newWidth <= MAX_WIDTH) {
+        // Calculate maximum width (leave minimum space for middle section)
+        const maxWidth = window.innerWidth - MIN_MIDDLE_WIDTH - SIDEBAR_WIDTH
+
+        // Apply constraints:
+        // - Right panel must be at least MIN_RIGHT_WIDTH
+        // - Right panel cannot exceed maxWidth (to preserve minimum middle section width)
+        if (newWidth >= MIN_RIGHT_WIDTH && newWidth <= maxWidth) {
           setRightPanelWidth(newWidth)
         }
       }
@@ -148,7 +155,8 @@ export default function CasePage() {
           {/* ============================================ */}
           {/* RIGHT SECTION - Resizable Side Panel         */}
           {/* Width controlled by rightPanelWidth state    */}
-          {/* Min: 250px, Max: 800px                       */}
+          {/* Min: 250px, Max: Dynamic (window - 300px - sidebar) */}
+          {/* Can slide almost all the way to the left!    */}
           {/* ============================================ */}
           <div
             className="bg-muted/10 overflow-auto"
@@ -158,10 +166,16 @@ export default function CasePage() {
               {/* Panel header - shows current width for testing */}
               <div className="mb-4 pb-4 border-b border-border">
                 <h3 className="text-sm font-semibold text-muted-foreground">
-                  Right Panel
+                  Right Panel (Resizable)
                 </h3>
                 <p className="text-xs text-muted-foreground/70 mt-1">
-                  Current width: {rightPanelWidth}px (Min: {MIN_WIDTH}px, Max: {MAX_WIDTH}px)
+                  Width: {rightPanelWidth}px
+                </p>
+                <p className="text-xs text-muted-foreground/70">
+                  Min: {MIN_RIGHT_WIDTH}px | Max: {typeof window !== 'undefined' ? window.innerWidth - MIN_MIDDLE_WIDTH - SIDEBAR_WIDTH : 'calculating...'}px
+                </p>
+                <p className="text-xs text-muted-foreground/50 mt-2">
+                  💡 Drag left to expand, almost to the edge!
                 </p>
               </div>
 
