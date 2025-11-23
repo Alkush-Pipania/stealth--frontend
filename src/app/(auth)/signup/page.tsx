@@ -18,9 +18,7 @@ import { useRedirectIfAuthenticated } from "@/hooks/useRedirectIfAuthenticated";
 
 interface SignupResponse {
   message: string;
-  user: any;
   token: string;
-  userId: string;
 }
 
 export default function SignUpPage() {
@@ -63,11 +61,8 @@ export default function SignUpPage() {
       });
 
       if (response.success && response.data?.token) {
-        // Save token and userId to localStorage
+        // Save token to localStorage (userId is now in the JWT token)
         tokenManager.setToken(response.data.token);
-        if (response.data.userId) {
-          tokenManager.setUserId(response.data.userId);
-        }
 
         // Show success message
         toast.success(response.data.message || "Account created successfully!");

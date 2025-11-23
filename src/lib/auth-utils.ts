@@ -13,7 +13,6 @@ export const isAuthenticated = (): boolean => {
  */
 export const logout = (): void => {
   tokenManager.removeToken();
-  tokenManager.removeUserId();
 };
 
 /**
