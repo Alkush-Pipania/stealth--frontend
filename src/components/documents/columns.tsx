@@ -43,36 +43,47 @@ export const formatDate = (dateString: string): string => {
 
 // Component for rendering document name
 export const DocumentNameCell = ({ document }: { document: Document }) => {
-  const displayName = document.name || document.fileName || "Untitled Document";
+  const displayName = document.filename || "Untitled Document";
 
   return (
     <div className="flex flex-col">
       <span className="font-medium">{displayName}</span>
-      {document.name && document.fileName && document.name !== document.fileName && (
-        <span className="text-sm text-muted-foreground">{document.fileName}</span>
+      {document.contentType && (
+        <span className="text-xs text-muted-foreground">{document.contentType}</span>
       )}
     </div>
   );
 };
 
-
-
-// Component for rendering file size
-export const FileSizeCell = ({ fileSize }: { fileSize: number | null }) => {
-  return <span className="text-sm">{formatFileSize(fileSize)}</span>;
+// Component for rendering pages count
+export const PagesCell = ({ pages }: { pages: number | null }) => {
+  return <span className="text-sm">{pages ? `${pages} pages` : "—"}</span>;
 };
 
 // Component for rendering upload date
-export const UploadDateCell = ({ createdAt }: { createdAt: string }) => {
-  return <span className="text-sm">{formatDate(createdAt)}</span>;
+export const UploadDateCell = ({ uploadedAt }: { uploadedAt: string }) => {
+  return <span className="text-sm">{formatDate(uploadedAt)}</span>;
 };
 
 // Component for rendering status
-export const StatusCell = ({ embedStatus }: { embedStatus: string | null }) => {
-  const isEmbedded = embedStatus === "completed";
+export const StatusCell = ({ status }: { status: string }) => {
+  const getStatusVariant = (status: string) => {
+    switch (status.toLowerCase()) {
+      case "completed":
+      case "success":
+        return "default";
+      case "processing":
+        return "secondary";
+      case "pending":
+        return "outline";
+      default:
+        return "outline";
+    }
+  };
+
   return (
-    <Badge variant={isEmbedded ? "default" : "outline"}>
-      {embedStatus === "embed" || embedStatus === "success" ? "Embed" : embedStatus === "processing" ? "Processing" : "Pending"}
+    <Badge variant={getStatusVariant(status)}>
+      {status.charAt(0).toUpperCase() + status.slice(1)}
     </Badge>
   );
 };
@@ -93,28 +104,6 @@ export const ActionsCell = ({ document }: { document: Document }) => {
           onClick={() => navigator.clipboard.writeText(document.id)}
         >
           Copy document ID
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem
-          onClick={() => document.fileUrl && window.open(document.fileUrl, "_blank")}
-          disabled={!document.fileUrl}
-        >
-          <ExternalLink className="mr-2 h-4 w-4" />
-          View document
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          onClick={() => {
-            if (document.fileUrl) {
-              const link = window.document.createElement("a");
-              link.href = document.fileUrl;
-              link.download = document.fileName || "document";
-              link.click();
-            }
-          }}
-          disabled={!document.fileUrl}
-        >
-          <Download className="mr-2 h-4 w-4" />
-          Download
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem className="text-destructive">

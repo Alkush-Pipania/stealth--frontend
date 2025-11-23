@@ -148,15 +148,8 @@ export function UploadDialog({ open, onOpenChange, sessionId, caseId }: UploadDi
     setIsUploading(true);
 
     try {
-      // Get userId from localStorage
-      const userId = tokenManager.getUserId();
-      if (!userId) {
-        toast.error("User not authenticated");
-        setIsUploading(false);
-        return;
-      }
-
       // Step 1: Get presigned URL from backend
+      // Backend will extract userId from JWT token
       const presignResponse = await apiPost<{
         document_id: string;
         upload_url: string;
@@ -166,7 +159,6 @@ export function UploadDialog({ open, onOpenChange, sessionId, caseId }: UploadDi
           filename: file.name,
           content_type: file.type,
           size_bytes: file.size,
-          userId: userId,
         },
         includeAuth: true,
       });
