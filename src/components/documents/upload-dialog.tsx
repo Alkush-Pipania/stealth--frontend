@@ -26,9 +26,10 @@ interface UploadDialogProps {
   onOpenChange: (open: boolean) => void;
   sessionId?: string;
   caseId?: string; // Optional: If provided, skip case selection
+  onUploadSuccess?: () => void; // Optional: Callback after successful upload
 }
 
-export function UploadDialog({ open, onOpenChange, sessionId, caseId }: UploadDialogProps) {
+export function UploadDialog({ open, onOpenChange, sessionId, caseId, onUploadSuccess }: UploadDialogProps) {
   const [name, setName] = React.useState("");
   const [file, setFile] = React.useState<File | null>(null);
   const [isUploading, setIsUploading] = React.useState(false);
@@ -81,7 +82,7 @@ export function UploadDialog({ open, onOpenChange, sessionId, caseId }: UploadDi
 
   const handleClose = () => {
     if (!isUploading) {
-      resetForm();
+      // Don't reset form - keep file selected for next time
       onOpenChange(false);
     }
   };
@@ -187,10 +188,15 @@ export function UploadDialog({ open, onOpenChange, sessionId, caseId }: UploadDi
         return;
       }
 
-      // Success!
+      // Success! Reset form and close
       toast.success("Document uploaded successfully!");
-      onOpenChange(false);
       resetForm();
+      onOpenChange(false);
+
+      // Trigger refresh callback if provided
+      if (onUploadSuccess) {
+        onUploadSuccess();
+      }
     } catch (error) {
       console.error("Upload error:", error);
       toast.error("Failed to upload document");
@@ -281,6 +287,7 @@ export function UploadDialog({ open, onOpenChange, sessionId, caseId }: UploadDi
                     size="sm"
                     onClick={(e) => {
                       e.stopPropagation();
+                      // Clear file and name
                       setFile(null);
                       setName("");
                     }}

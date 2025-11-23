@@ -41,10 +41,9 @@ export function DataTable({ data, isLoading = false, onRefresh, sessionId, caseI
 
     return data.filter((document) => {
       const searchLower = searchTerm.toLowerCase();
-      const fileName = document.fileName?.toLowerCase() || "";
-      const name = document.name?.toLowerCase() || "";
+      const filename = document.filename?.toLowerCase() || "";
 
-      return fileName.includes(searchLower) || name.includes(searchLower);
+      return filename.includes(searchLower);
     });
   }, [data, searchTerm]);
 
@@ -151,6 +150,7 @@ export function DataTable({ data, isLoading = false, onRefresh, sessionId, caseI
         onOpenChange={setUploadDialogOpen}
         sessionId={sessionId}
         caseId={caseId}
+        onUploadSuccess={onRefresh}
       />
     </div>
   );
