@@ -3,6 +3,7 @@
 import * as React from "react";
 import { Upload, X, FileText, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,7 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { apiGet, apiPost, tokenManager } from "@/action/server";
+import { apiGet, apiPost } from "@/action/server";
 import { API_ENDPOINTS } from "@/action/endpoint";
 
 interface Case {
@@ -173,15 +174,16 @@ export function UploadDialog({ open, onOpenChange, sessionId, caseId }: UploadDi
 
       const { upload_url, document_id } = presignResponse.data;
 
-      // Step 2: Upload file to R2 using presigned URL
-      // Note: Don't set Content-Type header to avoid CORS preflight
-      // The presigned URL already includes the content type
-      const uploadResponse = await fetch(upload_url, {
-        method: "PUT",
-        body: file,
+      const uploadResponse = await axios.put(upload_url, file, {
+        headers: {
+          // Let browser set Content-Type automatically
+          // DO NOT set custom headers - it triggers CORS preflight
+        },
+        // Don't transform the request body
+        transformRequest: [(data) => data],
       });
 
-      if (!uploadResponse.ok) {
+      if (uploadResponse.status !== 200) {
         toast.error("Failed to upload file to storage");
         setIsUploading(false);
         return;
@@ -191,9 +193,17 @@ export function UploadDialog({ open, onOpenChange, sessionId, caseId }: UploadDi
       toast.success("Document uploaded successfully!");
       onOpenChange(false);
       resetForm();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Upload error:", error);
-      toast.error("Failed to upload document");
+      
+      // More specific error messages
+      if (error.message?.includes("CORS") || error.message?.includes("Failed to fetch")) {
+        toast.error("CORS error: Check DigitalOcean Spaces CORS configuration");
+      } else if (axios.isAxiosError(error)) {
+        toast.error(`Upload failed: ${error.response?.status || "Network error"}`);
+      } else {
+        toast.error("Failed to upload document");
+      }
     } finally {
       setIsUploading(false);
     }

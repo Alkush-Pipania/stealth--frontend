@@ -59,18 +59,6 @@ export default function CasePage() {
           {/* ============================================ */}
           <div className="w-1/2 overflow-auto border-r border-border">
             <div className="p-6">
-              {/* Section Header */}
-              <div className="mb-6">
-                <h1 className="text-2xl font-semibold">
-                  {activeSection === "questions" ? "Questions" : "Documents"}
-                </h1>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {activeSection === "questions"
-                    ? "View and manage case questions"
-                    : "Manage and organize documents for this case"}
-                </p>
-              </div>
-
               {/* Content Area - Shows different content based on active section */}
               {activeSection === "questions" ? (
                 // QUESTIONS SECTION - Placeholder for now
