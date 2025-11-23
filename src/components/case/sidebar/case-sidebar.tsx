@@ -10,6 +10,7 @@ import {
   SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
+  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
@@ -17,6 +18,7 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
+import { StartSessionButton } from "@/components/case/start-session-button"
 
 interface CaseSidebarProps {
   activeSection: "questions" | "documents"
@@ -70,6 +72,13 @@ export function CaseSidebar({ activeSection, onSectionChange, caseId }: CaseSide
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup className="mt-4">
+          <SidebarGroupLabel>Live Session</SidebarGroupLabel>
+          <SidebarGroupContent className="mt-2">
+            <StartSessionButton />
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>

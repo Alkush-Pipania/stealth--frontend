@@ -9,6 +9,7 @@ import { useProtectedRoute } from "@/hooks/useProtectedRoute"
 import { DataTable } from "@/components/documents"
 import { RootState, AppDispatch } from "@/store"
 import { fetchCaseDocuments } from "@/store/thunk/documentsthunk"
+import { LiveTranscript } from "@/components/case/live-transcript"
 
 export default function CasePage() {
   // Protect this route - redirect to /signin if not authenticated
@@ -106,21 +107,11 @@ export default function CasePage() {
           <div className="w-px bg-border" />
 
           {/* ============================================ */}
-          {/* RIGHT SECTION - Side Panel                   */}
+          {/* RIGHT SECTION - Live Transcript Panel        */}
           {/* Takes up 50% of the width                    */}
           {/* ============================================ */}
-          <div className="w-1/2 bg-muted/10 overflow-auto">
-            <div className="p-6">
-              {/* Placeholder content */}
-              <div className="rounded-lg border border-border bg-card p-8">
-                <div className="text-center text-muted-foreground">
-                  <p className="text-sm">Right panel content</p>
-                  <p className="text-xs mt-2 text-muted-foreground/50">
-                    Coming soon
-                  </p>
-                </div>
-              </div>
-            </div>
+          <div className="w-1/2 overflow-hidden">
+            <LiveTranscript />
           </div>
         </div>
       </SidebarInset>

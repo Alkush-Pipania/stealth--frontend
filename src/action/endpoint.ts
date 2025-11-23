@@ -21,6 +21,13 @@ export const API_ENDPOINTS = {
   COMPLETE_UPLOAD: (caseId: string, docId: string) => `${BACKEND_URL}/api/${caseId}/documents/${docId}/complete`,
   GET_DOCUMENT_BY_ID: (caseId: string, documentId: string) => `${BACKEND_URL}/api/${caseId}/documents/${documentId}`,
   DELETE_DOCUMENT: (caseId: string, documentId: string) => `${BACKEND_URL}/api/cases/${caseId}/documents/${documentId}`,
+
+  // Session endpoints
+  START_SESSION: `${BACKEND_URL}/session/start`,
+  END_SESSION: (sessionId: string) => `${BACKEND_URL}/session/${sessionId}/end`,
+
+  // WebSocket endpoints
+  WS_TRANSCRIPT: `${BACKEND_URL.replace('http', 'ws')}/ws/transcript`,
 } as const;
 
 export default API_ENDPOINTS;
