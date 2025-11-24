@@ -15,13 +15,17 @@ interface DocumentViewerProps {
 }
 
 export function DocumentViewer({ caseId, documentId, pageNumber, onClose }: DocumentViewerProps) {
-  const [documentUrl, setDocumentUrl] = React.useState<string | null>(null)
+  const [baseDocumentUrl, setBaseDocumentUrl] = React.useState<string | null>(null)
+  const [currentDocumentUrl, setCurrentDocumentUrl] = React.useState<string | null>(null)
   const [loading, setLoading] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
+  const iframeRef = React.useRef<HTMLIFrameElement>(null)
 
+  // Effect 1: Fetch document URL only when documentId changes
   React.useEffect(() => {
     if (!documentId) {
-      setDocumentUrl(null)
+      setBaseDocumentUrl(null)
+      setCurrentDocumentUrl(null)
       setError(null)
       return
     }
@@ -37,14 +41,14 @@ export function DocumentViewer({ caseId, documentId, pageNumber, onClose }: Docu
         )
 
         if (response.success && response.data?.url) {
-          let finalUrl = response.data.url
+          const baseUrl = response.data.url
+          setBaseDocumentUrl(baseUrl)
 
-          // Only add page fragment if provided (fragments don't break presigned URLs)
-          if (pageNumber && pageNumber > 0) {
-            finalUrl = `${finalUrl}#page=${pageNumber}`
-          }
-
-          setDocumentUrl(finalUrl)
+          // Set initial URL with page if provided
+          const finalUrl = pageNumber && pageNumber > 0
+            ? `${baseUrl}#page=${pageNumber}`
+            : baseUrl
+          setCurrentDocumentUrl(finalUrl)
         } else {
           setError(response.error || "Failed to fetch document")
           toast.error(response.error || "Failed to fetch document")
@@ -59,7 +63,22 @@ export function DocumentViewer({ caseId, documentId, pageNumber, onClose }: Docu
     }
 
     fetchDocumentUrl()
-  }, [caseId, documentId, pageNumber])
+  }, [caseId, documentId]) // Only refetch when documentId changes
+
+  // Effect 2: Update page number without refetching when only pageNumber changes
+  React.useEffect(() => {
+    if (baseDocumentUrl && !loading) {
+      const newUrl = pageNumber && pageNumber > 0
+        ? `${baseDocumentUrl}#page=${pageNumber}`
+        : baseDocumentUrl
+
+      // Update URL and iframe src directly for instant navigation
+      setCurrentDocumentUrl(newUrl)
+      if (iframeRef.current) {
+        iframeRef.current.src = newUrl
+      }
+    }
+  }, [pageNumber, baseDocumentUrl, loading])
 
   if (!documentId) {
     return (
@@ -117,9 +136,10 @@ export function DocumentViewer({ caseId, documentId, pageNumber, onClose }: Docu
           </div>
         )}
 
-        {documentUrl && !loading && !error && (
+        {currentDocumentUrl && !loading && !error && (
           <iframe
-            src={documentUrl}
+            ref={iframeRef}
+            src={currentDocumentUrl}
             className="w-full h-full border-0"
             title="Document Viewer"
           />
