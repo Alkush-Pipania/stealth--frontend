@@ -11,8 +11,7 @@ import { RootState, AppDispatch } from "@/store"
 import { fetchCaseDocuments } from "@/store/thunk/documentsthunk"
 import { fetchCaseQuestions } from "@/store/thunk/questionsthunk"
 import { LiveTranscript } from "@/components/case/live-transcript"
-import { Button } from "@/components/ui/button"
-import { Plus } from "lucide-react"
+import { CreateQuestionDialog } from "@/components/case/create-question-dialog"
 
 export default function CasePage() {
   // Protect this route - redirect to /signin if not authenticated
@@ -91,16 +90,10 @@ export default function CasePage() {
                   {/* Header with Add Question button */}
                   <div className="flex items-center justify-between mb-6">
                     <h2 className="text-2xl font-bold">Questions</h2>
-                    <Button
-                      size="sm"
-                      onClick={() => {
-                        // TODO: Add question functionality will be added later
-                        console.log("Add question clicked")
-                      }}
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Question
-                    </Button>
+                    <CreateQuestionDialog
+                      caseId={caseId}
+                      onQuestionCreated={handleRefreshQuestions}
+                    />
                   </div>
 
                   {/* Error message if questions failed to load */}
