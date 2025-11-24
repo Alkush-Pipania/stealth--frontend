@@ -110,16 +110,81 @@ export class LiveKitService {
     }
   }
 
+  private audioContext: AudioContext | null = null
+  private mixedStreamDestination: MediaStreamAudioDestinationNode | null = null
+
+  /**
+   * Request microphone access
+   */
+  async captureMicrophone(): Promise<MediaStream> {
+    try {
+      const micStream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
+      })
+      console.log('Microphone audio captured successfully')
+      return micStream
+    } catch (error) {
+      console.error('Failed to capture microphone:', error)
+      throw new Error('Failed to access microphone. Please grant microphone permissions.')
+    }
+  }
+
+  /**
+   * Mix system audio and microphone audio into a single stream
+   */
+  mixAudioStreams(systemStream: MediaStream, micStream: MediaStream): MediaStream {
+    try {
+      // Create AudioContext if it doesn't exist
+      if (!this.audioContext) {
+        this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)()
+      }
+
+      // Create destination for mixed audio
+      this.mixedStreamDestination = this.audioContext.createMediaStreamDestination()
+
+      // Create sources
+      if (systemStream.getAudioTracks().length > 0) {
+        const systemSource = this.audioContext.createMediaStreamSource(systemStream)
+        systemSource.connect(this.mixedStreamDestination)
+      }
+
+      if (micStream.getAudioTracks().length > 0) {
+        const micSource = this.audioContext.createMediaStreamSource(micStream)
+        micSource.connect(this.mixedStreamDestination)
+      }
+
+      console.log('Audio streams mixed successfully')
+      return this.mixedStreamDestination.stream
+    } catch (error) {
+      console.error('Failed to mix audio streams:', error)
+      throw error
+    }
+  }
+
   /**
    * Start complete audio streaming flow:
    * 1. Connect to room
    * 2. Request system audio
-   * 3. Publish audio track
+   * 3. Request microphone audio
+   * 4. Mix streams
+   * 5. Publish mixed track
    */
   async startAudioStreaming(config: LiveKitConnectionConfig): Promise<void> {
     await this.connect(config)
-    const mediaStream = await this.requestSystemAudio()
-    await this.publishAudioTrack(mediaStream)
+
+    // Capture both streams
+    const systemStream = await this.requestSystemAudio()
+    const micStream = await this.captureMicrophone()
+
+    // Mix them
+    const mixedStream = this.mixAudioStreams(systemStream, micStream)
+
+    // Publish the mixed stream
+    await this.publishAudioTrack(mixedStream)
   }
 
   /**
@@ -134,6 +199,15 @@ export class LiveKitService {
       this.audioTrack.stop()
       this.audioTrack = null
     }
+
+    // Close AudioContext
+    if (this.audioContext) {
+      this.audioContext.close()
+      this.audioContext = null
+    }
+
+    this.mixedStreamDestination = null
+
     console.log('Disconnected from LiveKit room and cleaned up resources')
   }
 

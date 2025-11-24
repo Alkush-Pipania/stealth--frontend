@@ -35,7 +35,7 @@ export const env: EnvConfig = {
   // Backend API URL
   BACKEND_URL: getEnvVar('BACKEND_URL', 'http://localhost:4000'),
   // LiveKit Backend API URL
-  LIVE_BACKEND_URL: getEnvVar('LIVE_BACKEND_URL', 'http://localhost:5000'),
+  LIVE_BACKEND_URL: getEnvVar('LIVE_BACKEND_URL', 'http://localhost:8000'),
 
   // App Environment
   APP_ENV: (getEnvVar('NODE_ENV', 'development') as EnvConfig['APP_ENV']),
