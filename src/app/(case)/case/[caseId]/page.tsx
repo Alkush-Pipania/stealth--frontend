@@ -9,7 +9,10 @@ import { useProtectedRoute } from "@/hooks/useProtectedRoute"
 import { DataTable } from "@/components/documents"
 import { RootState, AppDispatch } from "@/store"
 import { fetchCaseDocuments } from "@/store/thunk/documentsthunk"
+import { fetchCaseQuestions } from "@/store/thunk/questionsthunk"
 import { LiveTranscript } from "@/components/case/live-transcript"
+import { Button } from "@/components/ui/button"
+import { Plus } from "lucide-react"
 
 export default function CasePage() {
   // Protect this route - redirect to /signin if not authenticated
@@ -27,6 +30,13 @@ export default function CasePage() {
     (state: RootState) => state.documents
   )
 
+  // ============================================
+  // QUESTIONS STATE - From Redux
+  // ============================================
+  const { questions, loading: questionsLoading, error: questionsError } = useSelector(
+    (state: RootState) => state.questions
+  )
+
   // Fetch documents when Documents section is active
   React.useEffect(() => {
     if (activeSection === "documents" && caseId) {
@@ -34,10 +44,24 @@ export default function CasePage() {
     }
   }, [activeSection, caseId, dispatch])
 
+  // Fetch questions when Questions section is active
+  React.useEffect(() => {
+    if (activeSection === "questions" && caseId) {
+      dispatch(fetchCaseQuestions(caseId))
+    }
+  }, [activeSection, caseId, dispatch])
+
   // Handler: Refresh documents
   const handleRefreshDocuments = React.useCallback(() => {
     if (caseId) {
       dispatch(fetchCaseDocuments(caseId))
+    }
+  }, [caseId, dispatch])
+
+  // Handler: Refresh questions
+  const handleRefreshQuestions = React.useCallback(() => {
+    if (caseId) {
+      dispatch(fetchCaseQuestions(caseId))
     }
   }, [caseId, dispatch])
 
@@ -62,12 +86,115 @@ export default function CasePage() {
             <div className="p-6">
               {/* Content Area - Shows different content based on active section */}
               {activeSection === "questions" ? (
-                // QUESTIONS SECTION - Placeholder for now
-                <div className="rounded-lg border border-border bg-card p-8">
-                  <div className="text-center text-muted-foreground">
-                    <p className="text-lg mb-2">Questions Section</p>
-                    <p className="text-sm">Questions content will appear here</p>
+                // QUESTIONS SECTION
+                <div className="space-y-4">
+                  {/* Header with Add Question button */}
+                  <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-2xl font-bold">Questions</h2>
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        // TODO: Add question functionality will be added later
+                        console.log("Add question clicked")
+                      }}
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Question
+                    </Button>
                   </div>
+
+                  {/* Error message if questions failed to load */}
+                  {questionsError && (
+                    <div className="rounded-md bg-destructive/15 p-4">
+                      <div className="flex">
+                        <div className="ml-3">
+                          <h3 className="text-sm font-medium text-destructive">
+                            Error loading questions
+                          </h3>
+                          <div className="mt-2 text-sm text-destructive">
+                            {questionsError}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Loading state */}
+                  {questionsLoading && (
+                    <div className="text-center text-muted-foreground py-8">
+                      <p>Loading questions...</p>
+                    </div>
+                  )}
+
+                  {/* Questions list */}
+                  {!questionsLoading && questions.length === 0 && (
+                    <div className="rounded-lg border border-border bg-card p-8">
+                      <div className="text-center text-muted-foreground">
+                        <p className="text-lg mb-2">No questions yet</p>
+                        <p className="text-sm">Click "Add Question" to create your first question</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {!questionsLoading && questions.length > 0 && (
+                    <div className="space-y-3">
+                      {questions.map((question) => (
+                        <div
+                          key={question.id}
+                          className="rounded-lg border border-border bg-card p-4 hover:bg-accent/50 cursor-pointer transition-colors"
+                          onClick={() => {
+                            // TODO: Handle question click
+                            console.log("Question clicked:", question.id)
+                          }}
+                        >
+                          <div className="flex items-start gap-3">
+                            {/* Priority badge */}
+                            <div className="flex-shrink-0">
+                              <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary text-sm font-semibold">
+                                {question.priority}
+                              </span>
+                            </div>
+
+                            {/* Question content */}
+                            <div className="flex-1 min-w-0">
+                              <p className="text-base font-medium mb-2">
+                                {question.text}
+                              </p>
+
+                              {/* Rationale */}
+                              {question.rationale && (
+                                <p className="text-sm text-muted-foreground mb-2">
+                                  {question.rationale}
+                                </p>
+                              )}
+
+                              {/* Metadata */}
+                              <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
+                                {question.documentId && (
+                                  <span>
+                                    📄 Document attached
+                                  </span>
+                                )}
+                                {question.pageNumber && (
+                                  <span>
+                                    Page {question.pageNumber}
+                                  </span>
+                                )}
+                                {question.linkedChunkIds && question.linkedChunkIds.length > 0 && (
+                                  <span>
+                                    🔗 {question.linkedChunkIds.length} linked chunk{question.linkedChunkIds.length > 1 ? 's' : ''}
+                                  </span>
+                                )}
+                                <span>
+                                  {new Date(question.createdAt).toLocaleDateString()}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ) : (
                 // DOCUMENTS SECTION - Full document management
