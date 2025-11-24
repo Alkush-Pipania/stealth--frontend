@@ -37,20 +37,10 @@ export function DocumentViewer({ caseId, documentId, pageNumber, onClose }: Docu
         )
 
         if (response.success && response.data?.url) {
-          // Build URL with page parameter and toolbar hidden
           let finalUrl = response.data.url
 
-          // For PDF files, add parameters to hide toolbar and optimize viewing
-          if (finalUrl.toLowerCase().includes('.pdf') || finalUrl.includes('application/pdf')) {
-            const separator = finalUrl.includes('?') ? '&' : '?'
-            finalUrl = `${finalUrl}${separator}toolbar=0&navpanes=0&scrollbar=0&view=FitH`
-
-            // Add page number if provided
-            if (pageNumber && pageNumber > 0) {
-              finalUrl = `${finalUrl}#page=${pageNumber}`
-            }
-          } else if (pageNumber && pageNumber > 0) {
-            // For non-PDF files, just add page fragment
+          // Only add page fragment if provided (fragments don't break presigned URLs)
+          if (pageNumber && pageNumber > 0) {
             finalUrl = `${finalUrl}#page=${pageNumber}`
           }
 
@@ -128,10 +118,9 @@ export function DocumentViewer({ caseId, documentId, pageNumber, onClose }: Docu
         )}
 
         {documentUrl && !loading && !error && (
-          <embed
+          <iframe
             src={documentUrl}
-            type="application/pdf"
-            className="w-full h-full"
+            className="w-full h-full border-0"
             title="Document Viewer"
           />
         )}
