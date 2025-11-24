@@ -12,6 +12,9 @@ import { fetchCaseDocuments } from "@/store/thunk/documentsthunk"
 import { fetchCaseQuestions } from "@/store/thunk/questionsthunk"
 import { LiveTranscript } from "@/components/case/live-transcript"
 import { CreateQuestionDialog } from "@/components/case/create-question-dialog"
+import { DocumentViewer } from "@/components/case/document-viewer"
+import { Button } from "@/components/ui/button"
+import { FileText } from "lucide-react"
 
 export default function CasePage() {
   // Protect this route - redirect to /signin if not authenticated
@@ -21,6 +24,12 @@ export default function CasePage() {
   const caseId = params.caseId as string
   const dispatch = useDispatch<AppDispatch>()
   const [activeSection, setActiveSection] = React.useState<"questions" | "documents">("questions")
+
+  // ============================================
+  // RIGHTMOST SECTION STATE - Document Viewer
+  // ============================================
+  const [selectedDocumentId, setSelectedDocumentId] = React.useState<string | null>(null)
+  const [selectedPageNumber, setSelectedPageNumber] = React.useState<number | null>(null)
 
   // ============================================
   // DOCUMENTS STATE - From Redux
@@ -62,6 +71,18 @@ export default function CasePage() {
       dispatch(fetchCaseQuestions(caseId))
     }
   }, [caseId, dispatch])
+
+  // Handler: View document
+  const handleViewDocument = React.useCallback((documentId: string, pageNumber: number | null) => {
+    setSelectedDocumentId(documentId)
+    setSelectedPageNumber(pageNumber)
+  }, [])
+
+  // Handler: Close document viewer
+  const handleCloseDocumentViewer = React.useCallback(() => {
+    setSelectedDocumentId(null)
+    setSelectedPageNumber(null)
+  }, [])
 
   // ============================================
   // RENDER
@@ -133,11 +154,7 @@ export default function CasePage() {
                       {questions.map((question) => (
                         <div
                           key={question.id}
-                          className="rounded-lg border border-border bg-card p-4 hover:bg-accent/50 cursor-pointer transition-colors"
-                          onClick={() => {
-                            // TODO: Handle question click
-                            console.log("Question clicked:", question.id)
-                          }}
+                          className="rounded-lg border border-border bg-card p-4 transition-colors"
                         >
                           <div className="flex items-start gap-3">
                             {/* Priority badge */}
@@ -161,7 +178,7 @@ export default function CasePage() {
                               )}
 
                               {/* Metadata */}
-                              <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
+                              <div className="flex flex-wrap gap-4 text-xs text-muted-foreground mb-3">
                                 {question.documentId && (
                                   <span>
                                     📄 Document attached
@@ -181,6 +198,23 @@ export default function CasePage() {
                                   {new Date(question.createdAt).toLocaleDateString()}
                                 </span>
                               </div>
+
+                              {/* View Document Button */}
+                              {question.documentId && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    handleViewDocument(question.documentId!, question.pageNumber)
+                                  }}
+                                  className="h-8"
+                                >
+                                  <FileText className="h-3 w-3 mr-2" />
+                                  View Document
+                                  {question.pageNumber && ` (Page ${question.pageNumber})`}
+                                </Button>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -226,11 +260,20 @@ export default function CasePage() {
           <div className="w-px bg-border" />
 
           {/* ============================================ */}
-          {/* RIGHT SECTION - Live Transcript Panel        */}
+          {/* RIGHT SECTION - Live Transcript / Document Viewer */}
           {/* Takes up 50% of the width                    */}
           {/* ============================================ */}
           <div className="w-1/2 overflow-hidden">
-            <LiveTranscript />
+            {selectedDocumentId ? (
+              <DocumentViewer
+                caseId={caseId}
+                documentId={selectedDocumentId}
+                pageNumber={selectedPageNumber}
+                onClose={handleCloseDocumentViewer}
+              />
+            ) : (
+              <LiveTranscript />
+            )}
           </div>
         </div>
       </SidebarInset>
