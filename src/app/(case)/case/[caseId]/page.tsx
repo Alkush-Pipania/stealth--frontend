@@ -36,19 +36,18 @@ export default function CasePage() {
     (state: RootState) => state.questions
   )
 
-  // Fetch documents when Documents section is active
+  // ============================================
+  // FETCH ALL DATA ON MOUNT
+  // Fetch all data (questions, documents) once when the case page loads
+  // This ensures data persists when switching tabs without refetching
+  // ============================================
   React.useEffect(() => {
-    if (activeSection === "documents" && caseId) {
+    if (caseId) {
+      // Fetch both questions and documents in parallel
+      dispatch(fetchCaseQuestions(caseId))
       dispatch(fetchCaseDocuments(caseId))
     }
-  }, [activeSection, caseId, dispatch])
-
-  // Fetch questions when Questions section is active
-  React.useEffect(() => {
-    if (activeSection === "questions" && caseId) {
-      dispatch(fetchCaseQuestions(caseId))
-    }
-  }, [activeSection, caseId, dispatch])
+  }, [caseId, dispatch])
 
   // Handler: Refresh documents
   const handleRefreshDocuments = React.useCallback(() => {
