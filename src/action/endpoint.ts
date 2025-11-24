@@ -1,4 +1,4 @@
-import { BACKEND_URL } from '@/config/env';
+import { BACKEND_URL, LIVE_BACKEND_URL } from '@/config/env';
 
 // API Endpoints
 export const API_ENDPOINTS = {
@@ -21,6 +21,13 @@ export const API_ENDPOINTS = {
   COMPLETE_UPLOAD: (caseId: string, docId: string) => `${BACKEND_URL}/api/${caseId}/documents/${docId}/complete`,
   GET_DOCUMENT_BY_ID: (caseId: string, documentId: string) => `${BACKEND_URL}/api/${caseId}/documents/${documentId}`,
   DELETE_DOCUMENT: (caseId: string, documentId: string) => `${BACKEND_URL}/api/cases/${caseId}/documents/${documentId}`,
+
+  // Session endpoints (LiveKit backend)
+  START_SESSION: `${LIVE_BACKEND_URL}/session/start`,
+  END_SESSION: (sessionId: string) => `${LIVE_BACKEND_URL}/session/${sessionId}/end`,
+
+  // WebSocket endpoints (LiveKit backend)
+  WS_TRANSCRIPT: `${LIVE_BACKEND_URL.replace('http', 'ws')}/ws/transcript`,
 } as const;
 
 export default API_ENDPOINTS;
