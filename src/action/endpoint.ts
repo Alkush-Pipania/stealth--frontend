@@ -24,6 +24,7 @@ export const API_ENDPOINTS = {
 
   // Questions endpoints
   GET_QUESTIONS: (caseId: string) => `${BACKEND_URL}/api/questions/${caseId}`,
+  CREATE_QUESTION: `${BACKEND_URL}/api/questions`,
 
   // Session endpoints (LiveKit backend)
   START_SESSION: `${LIVE_BACKEND_URL}/session/start`,
