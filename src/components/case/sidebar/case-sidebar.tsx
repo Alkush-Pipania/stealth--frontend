@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { FileText, HelpCircle, ChevronLeft } from "lucide-react"
+import { FileText, HelpCircle, ChevronLeft, MessageSquare, Eye } from "lucide-react"
 import Link from "next/link"
 
 import {
@@ -23,10 +23,12 @@ import { StartSessionButton } from "@/components/case/start-session-button"
 interface CaseSidebarProps {
   activeSection: "questions" | "documents"
   onSectionChange: (section: "questions" | "documents") => void
+  activeRightSection: "transcription" | "document"
+  onRightSectionChange: (section: "transcription" | "document") => void
   caseId: string
 }
 
-const sectionItems = [
+const middleSectionItems = [
   {
     id: "questions" as const,
     title: "Questions",
@@ -39,7 +41,26 @@ const sectionItems = [
   }
 ]
 
-export function CaseSidebar({ activeSection, onSectionChange, caseId }: CaseSidebarProps) {
+const rightSectionItems = [
+  {
+    id: "transcription" as const,
+    title: "Transcription",
+    icon: MessageSquare
+  },
+  {
+    id: "document" as const,
+    title: "Document Viewer",
+    icon: Eye
+  }
+]
+
+export function CaseSidebar({
+  activeSection,
+  onSectionChange,
+  activeRightSection,
+  onRightSectionChange,
+  caseId
+}: CaseSidebarProps) {
   return (
     <Sidebar className="border-r border-sidebar-border">
       <SidebarHeader className="border-b border-sidebar-border px-4 py-3">
@@ -58,13 +79,33 @@ export function CaseSidebar({ activeSection, onSectionChange, caseId }: CaseSide
 
       <SidebarContent className="px-4 py-4">
         <SidebarGroup>
+          <SidebarGroupLabel>Content</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {sectionItems.map((item) => (
+              {middleSectionItems.map((item) => (
                 <SidebarMenuItem key={item.id}>
                   <SidebarMenuButton
                     onClick={() => onSectionChange(item.id)}
                     isActive={activeSection === item.id}
+                  >
+                    <item.icon className="h-4 w-4" />
+                    <span>{item.title}</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup className="mt-4">
+          <SidebarGroupLabel>Right Panel</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {rightSectionItems.map((item) => (
+                <SidebarMenuItem key={item.id}>
+                  <SidebarMenuButton
+                    onClick={() => onRightSectionChange(item.id)}
+                    isActive={activeRightSection === item.id}
                   >
                     <item.icon className="h-4 w-4" />
                     <span>{item.title}</span>
