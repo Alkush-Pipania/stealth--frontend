@@ -22,6 +22,9 @@ export const API_ENDPOINTS = {
   GET_DOCUMENT_BY_ID: (caseId: string, documentId: string) => `${BACKEND_URL}/api/${caseId}/documents/${documentId}`,
   DELETE_DOCUMENT: (caseId: string, documentId: string) => `${BACKEND_URL}/api/cases/${caseId}/documents/${documentId}`,
 
+  // Questions endpoints
+  GET_QUESTIONS: (caseId: string) => `${BACKEND_URL}/api/questions/${caseId}`,
+
   // Session endpoints (LiveKit backend)
   START_SESSION: `${LIVE_BACKEND_URL}/session/start`,
   END_SESSION: (sessionId: string) => `${LIVE_BACKEND_URL}/session/${sessionId}/end`,
