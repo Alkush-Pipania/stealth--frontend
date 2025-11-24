@@ -26,8 +26,9 @@ export default function CasePage() {
   const [activeSection, setActiveSection] = React.useState<"questions" | "documents">("questions")
 
   // ============================================
-  // RIGHTMOST SECTION STATE - Document Viewer
+  // RIGHTMOST SECTION STATE
   // ============================================
+  const [activeRightSection, setActiveRightSection] = React.useState<"transcription" | "document">("transcription")
   const [selectedDocumentId, setSelectedDocumentId] = React.useState<string | null>(null)
   const [selectedPageNumber, setSelectedPageNumber] = React.useState<number | null>(null)
 
@@ -76,12 +77,17 @@ export default function CasePage() {
   const handleViewDocument = React.useCallback((documentId: string, pageNumber: number | null) => {
     setSelectedDocumentId(documentId)
     setSelectedPageNumber(pageNumber)
+    setActiveRightSection("document")
   }, [])
 
-  // Handler: Close document viewer
-  const handleCloseDocumentViewer = React.useCallback(() => {
-    setSelectedDocumentId(null)
-    setSelectedPageNumber(null)
+  // Handler: Change right section
+  const handleRightSectionChange = React.useCallback((section: "transcription" | "document") => {
+    setActiveRightSection(section)
+    // If switching to transcription, clear document selection
+    if (section === "transcription") {
+      setSelectedDocumentId(null)
+      setSelectedPageNumber(null)
+    }
   }, [])
 
   // ============================================
@@ -93,6 +99,8 @@ export default function CasePage() {
       <CaseSidebar
         activeSection={activeSection}
         onSectionChange={setActiveSection}
+        activeRightSection={activeRightSection}
+        onRightSectionChange={handleRightSectionChange}
         caseId={caseId}
       />
       <SidebarInset>
@@ -264,12 +272,12 @@ export default function CasePage() {
           {/* Takes up 50% of the width                    */}
           {/* ============================================ */}
           <div className="w-1/2 overflow-hidden">
-            {selectedDocumentId ? (
+            {activeRightSection === "document" ? (
               <DocumentViewer
                 caseId={caseId}
                 documentId={selectedDocumentId}
                 pageNumber={selectedPageNumber}
-                onClose={handleCloseDocumentViewer}
+                onClose={() => handleRightSectionChange("transcription")}
               />
             ) : (
               <LiveTranscript />
