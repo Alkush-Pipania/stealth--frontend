@@ -72,11 +72,8 @@ export function DocumentViewer({ caseId, documentId, pageNumber, onClose }: Docu
         ? `${baseDocumentUrl}#page=${pageNumber}`
         : baseDocumentUrl
 
-      // Update URL and iframe src directly for instant navigation
+      // Update URL - the key prop on iframe will force it to reload
       setCurrentDocumentUrl(newUrl)
-      if (iframeRef.current) {
-        iframeRef.current.src = newUrl
-      }
     }
   }, [pageNumber, baseDocumentUrl, loading])
 
@@ -138,6 +135,7 @@ export function DocumentViewer({ caseId, documentId, pageNumber, onClose }: Docu
 
         {currentDocumentUrl && !loading && !error && (
           <iframe
+            key={currentDocumentUrl}
             ref={iframeRef}
             src={currentDocumentUrl}
             className="w-full h-full border-0"
