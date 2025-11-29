@@ -13,8 +13,13 @@ import { fetchCaseQuestions } from "@/store/thunk/questionsthunk"
 import { LiveTranscript } from "@/components/case/live-transcript"
 import { CreateQuestionDialog } from "@/components/case/create-question-dialog"
 import { DocumentViewer } from "@/components/case/document-viewer"
+import { RedFlags } from "@/components/case/red-flags"
+import { FollowUpQuestions } from "@/components/case/follow-up-questions"
 import { Button } from "@/components/ui/button"
 import { FileText } from "lucide-react"
+import { markAllRedFlagsAsRead } from "@/store/slice/redflagsslice"
+import { markAllFollowUpsAsRead } from "@/store/slice/followupsslice"
+import { useDemoData } from "@/hooks/useDemoData"
 
 export default function CasePage() {
   // Protect this route - redirect to /signin if not authenticated
@@ -25,10 +30,14 @@ export default function CasePage() {
   const dispatch = useDispatch<AppDispatch>()
   const [activeSection, setActiveSection] = React.useState<"questions" | "documents">("questions")
 
+  // Demo data for testing (set to true to enable demo mode)
+  // TODO: Remove or set to false in production
+  useDemoData(caseId, true)
+
   // ============================================
   // RIGHTMOST SECTION STATE
   // ============================================
-  const [activeRightSection, setActiveRightSection] = React.useState<"transcription" | "document">("transcription")
+  const [activeRightSection, setActiveRightSection] = React.useState<"transcription" | "document" | "redflags" | "followups">("transcription")
   const [selectedDocumentId, setSelectedDocumentId] = React.useState<string | null>(null)
   const [selectedPageNumber, setSelectedPageNumber] = React.useState<number | null>(null)
 
@@ -81,14 +90,22 @@ export default function CasePage() {
   }, [])
 
   // Handler: Change right section
-  const handleRightSectionChange = React.useCallback((section: "transcription" | "document") => {
+  const handleRightSectionChange = React.useCallback((section: "transcription" | "document" | "redflags" | "followups") => {
     setActiveRightSection(section)
-    // If switching to transcription, clear document selection
-    if (section === "transcription") {
+
+    // Mark items as read when viewing their section
+    if (section === "redflags") {
+      dispatch(markAllRedFlagsAsRead())
+    } else if (section === "followups") {
+      dispatch(markAllFollowUpsAsRead())
+    }
+
+    // If switching away from document, clear document selection
+    if (section !== "document") {
       setSelectedDocumentId(null)
       setSelectedPageNumber(null)
     }
-  }, [])
+  }, [dispatch])
 
   // ============================================
   // RENDER
@@ -268,7 +285,7 @@ export default function CasePage() {
           <div className="w-px bg-border" />
 
           {/* ============================================ */}
-          {/* RIGHT SECTION - Live Transcript / Document Viewer */}
+          {/* RIGHT SECTION - Live Transcript / Document Viewer / Red Flags / Follow-ups */}
           {/* Takes up 50% of the width                    */}
           {/* ============================================ */}
           <div className="w-1/2 overflow-hidden">
@@ -279,6 +296,10 @@ export default function CasePage() {
                 pageNumber={selectedPageNumber}
                 onClose={() => handleRightSectionChange("transcription")}
               />
+            ) : activeRightSection === "redflags" ? (
+              <RedFlags />
+            ) : activeRightSection === "followups" ? (
+              <FollowUpQuestions />
             ) : (
               <LiveTranscript />
             )}
