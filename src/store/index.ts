@@ -3,6 +3,8 @@ import AppSessionslice from './slice/sessionslice';
 import documentSlice from './slice/documentslice';
 import casesSlice from './slice/casesslice';
 import questionsSlice from './slice/questionsslice';
+import redFlagsSlice from './slice/redflagsslice';
+import followUpsSlice from './slice/followupsslice';
 
 export const store = configureStore({
     reducer: {
@@ -10,6 +12,8 @@ export const store = configureStore({
         documents: documentSlice,
         cases: casesSlice,
         questions: questionsSlice,
+        redFlags: redFlagsSlice,
+        followUps: followUpsSlice,
     },
     middleware: (getDefaultMiddleware) =>
         getDefaultMiddleware({
